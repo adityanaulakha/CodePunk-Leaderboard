@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+@theme {
+  --color-spidey-red: #ff003c;
+  --color-spidey-blue: #0076cc;
+  --color-spidey-black: #111111;
+  --color-gwen-pink: #ff4d85;
+  --color-gwen-cyan: #00ffff;
+  --color-2099-blue: #0f195e;
+  --color-2099-orange: #ff4800;
+  --color-prowler-purple: #8b00ff;
+
+  --font-hero: "Bebas Neue", sans-serif;
+  --font-base: "Inter", sans-serif;
+}
+
+@layer base {
+	html,
+	body {
+		height: 100%;
+	}
+
+	body {
+		@apply text-zinc-100 antialiased;
+		font-family: var(--font-base), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+		background-color: var(--color-spidey-black);
+		/* Halftone Background Base */
+		background-image: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+		background-size: 14px 14px;
+	}
+
+  h1, h2, h3, h4, .font-hero {
+    font-family: var(--font-hero);
+    letter-spacing: 0.05em;
+  }
+}
+
+@layer utilities {
+	.scrollbar-thin {
+		scrollbar-width: thin;
+	}
+
+  .shadow-comic {
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 1);
+  }
+
+  .shadow-comic-cyan {
+    box-shadow: 4px 4px 0px var(--color-gwen-cyan);
+  }
+  
+  .shadow-comic-pink {
+    box-shadow: -4px 4px 0px var(--color-gwen-pink);
+  }
+
+  .shadow-comic-red {
+    box-shadow: 4px 4px 0px var(--color-spidey-red);
+  }
+
+  /* Glitch Text Effect */
+  .text-glitch {
+    position: relative;
+    display: inline-block;
+  }
+
+  .text-glitch::before,
+  .text-glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.8;
+  }
+
+  .text-glitch::before {
+    left: 3px;
+    text-shadow: -2px 0 var(--color-spidey-red);
+    animation: glitch-anim-1 3s infinite linear alternate-reverse;
+  }
+
+  .text-glitch::after {
+    left: -3px;
+    text-shadow: 2px 0 var(--color-gwen-cyan);
+    animation: glitch-anim-2 3s infinite linear alternate-reverse;
+  }
+}
+
+@keyframes glitch-anim-1 {
+  0% { clip-path: inset(20% 0 80% 0); transform: translate(-2px, 1px); }
+  20% { clip-path: inset(60% 0 10% 0); transform: translate(2px, -1px); }
+  40% { clip-path: inset(40% 0 50% 0); transform: translate(-2px, 2px); }
+  60% { clip-path: inset(80% 0 5% 0); transform: translate(2px, -2px); }
+  80% { clip-path: inset(10% 0 70% 0); transform: translate(-1px, 1px); }
+  100% { clip-path: inset(30% 0 50% 0); transform: translate(1px, -1px); }
+}
+
+@keyframes glitch-anim-2 {
+  0% { clip-path: inset(10% 0 60% 0); transform: translate(2px, -1px); }
+  20% { clip-path: inset(30% 0 20% 0); transform: translate(-2px, 1px); }
+  40% { clip-path: inset(70% 0 10% 0); transform: translate(2px, -2px); }
+  60% { clip-path: inset(20% 0 50% 0); transform: translate(-2px, 2px); }
+  80% { clip-path: inset(40% 0 30% 0); transform: translate(1px, -1px); }
+  100% { clip-path: inset(80% 0 5% 0); transform: translate(-1px, 1px); }
+}

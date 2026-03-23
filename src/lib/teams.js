@@ -28,10 +28,14 @@ export function normalizeTeamDoc(docSnap) {
   const data = docSnap.data() || {}
   
   // Backward compatibility + new map
-  const scores = data.scores || {}
-  if (data.round1 !== undefined && !scores['Round 1']) scores['Round 1'] = Number(data.round1)
-  if (data.round2 !== undefined && !scores['Round 2']) scores['Round 2'] = Number(data.round2)
-  if (data.finalEval !== undefined && !scores['Final']) scores['Final'] = Number(data.finalEval)
+  const scores = { ...(data.scores || {}) }
+  const isMigrated = Object.keys(scores).length > 0
+  
+  if (!isMigrated) {
+    if (data.round1 !== undefined) scores['Round 1'] = Number(data.round1)
+    if (data.round2 !== undefined) scores['Round 2'] = Number(data.round2)
+    if (data.finalEval !== undefined) scores['Final'] = Number(data.finalEval)
+  }
 
   const normalized = {
     id: docSnap.id,

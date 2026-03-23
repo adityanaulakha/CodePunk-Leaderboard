@@ -75,16 +75,28 @@ export default function LeaderboardTable({ teams, roundNames = [], updatedIds })
                   initial={{ opacity: 0, x: -20, skewX: -10 }}
                   animate={{ opacity: 1, x: 0, skewX: -2 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8, delay: index * 0.05 }}
+                  transition={{ 
+                    layout: { type: 'spring', stiffness: 300, damping: 30 },
+                    opacity: { duration: 0.3, delay: index * 0.05 },
+                    x: { type: 'spring', delay: index * 0.05 }
+                  }}
                   style={dynamicGridStyles}
                   className={[
-                    'gap-2 px-4 py-4 border-4',
+                    'gap-2 px-4 py-4 border-4 relative',
                     rowTone(rank),
-                    isUpdated ? 'ring-4 ring-white animate-pulse' : '',
+                    isUpdated ? 'scale-[1.02] ring-4 ring-white shadow-comic-pink z-10 transition-transform duration-300' : 'transition-colors',
                   ].join(' ')}
                 >
                   <div className={`flex items-center gap-2 font-hero text-3xl ${textTone(rank)}`}>
-                    <span className="tabular-nums">#{rank}</span>
+                    <motion.span 
+                      key={rank}
+                      initial={{ scale: 1.5, y: -10, color: '#00F0FF' }}
+                      animate={{ scale: 1, y: 0, color: '' }}
+                      transition={{ type: 'spring', stiffness: 300 }}
+                      className="tabular-nums inline-block"
+                    >
+                      #{rank}
+                    </motion.span>
                     <Medal rank={rank} />
                   </div>
 
@@ -99,12 +111,27 @@ export default function LeaderboardTable({ teams, roundNames = [], updatedIds })
 
                   {roundNames.map((r, i) => (
                     <div key={i} className={`text-right font-hero text-3xl tabular-nums ${textTone(rank)}`}>
-                      {team.scores?.[r] || 0}
+                      <motion.span
+                        key={team.scores?.[r] || 0}
+                        initial={{ scale: 1.5, color: '#FF00A0' }}
+                        animate={{ scale: 1, color: '' }}
+                        className="inline-block"
+                      >
+                        {team.scores?.[r] || 0}
+                      </motion.span>
                     </div>
                   ))}
 
                   <div className={`text-right font-hero text-4xl tabular-nums ${scoreTone(rank)} drop-shadow-[2px_2px_0_rgba(0,0,0,0.5)]`}>
-                    {team.total}
+                    <motion.span
+                      key={team.total}
+                      initial={{ scale: 1.5, color: '#fff' }}
+                      animate={{ scale: 1, color: '' }}
+                      transition={{ type: 'spring', stiffness: 400 }}
+                      className="inline-block"
+                    >
+                      {team.total}
+                    </motion.span>
                   </div>
                 </MotionDiv>
               )

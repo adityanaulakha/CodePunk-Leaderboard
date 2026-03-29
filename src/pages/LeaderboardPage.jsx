@@ -58,7 +58,7 @@ export default function LeaderboardPage() {
             <div className="absolute -left-4 top-0 w-1 h-full bg-spidey-red shadow-comic-red"></div>
             
             <div className="text-sm font-bold uppercase tracking-[0.4em] text-gwen-cyan mb-2">
-              Droid Club • GLA University
+              Droid Club
             </div>
             <h1 
               data-text="CODEPUNK V2.0 LEADERBOARD"

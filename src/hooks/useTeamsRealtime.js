@@ -25,7 +25,8 @@ function scoresChanged(prev, next) {
 
 export default function useTeamsRealtime() {
   const [teams, setTeams] = useState([])
-  const [roundNames, setRoundNames] = useState(['Round 1', 'Round 2', 'Final']) // default fallback
+  const [roundNamesSoftware, setRoundNamesSoftware] = useState(['Round 1', 'Round 2', 'Final'])
+  const [roundNamesHardware, setRoundNamesHardware] = useState(['Round 1', 'Round 2', 'Final'])
   const [isFrozen, setIsFrozen] = useState(false)
   const [celebrationAt, setCelebrationAt] = useState(null)
   const [updatedIds, setUpdatedIds] = useState(() => new Set())
@@ -84,9 +85,13 @@ export default function useTeamsRealtime() {
     const unsubSettings = onSnapshot(doc(db, SETTINGS_COLLECTION, CONFIG_DOC), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data()
-        if (Array.isArray(data.rounds)) {
-          setRoundNames(data.rounds)
-        }
+        
+        if (Array.isArray(data.rounds_software)) setRoundNamesSoftware(data.rounds_software)
+        else if (Array.isArray(data.rounds)) setRoundNamesSoftware(data.rounds)
+        
+        if (Array.isArray(data.rounds_hardware)) setRoundNamesHardware(data.rounds_hardware)
+        else if (Array.isArray(data.rounds)) setRoundNamesHardware(data.rounds)
+
         setIsFrozen(Boolean(data.isFrozen))
         if (data.celebrationAt) {
           setCelebrationAt(data.celebrationAt.toMillis ? data.celebrationAt.toMillis() : Date.now())
@@ -103,5 +108,5 @@ export default function useTeamsRealtime() {
   }, [])
 
   const updatedIdsMemo = useMemo(() => updatedIds, [updatedIds])
-  return { teams, roundNames, isFrozen, celebrationAt, updatedIds: updatedIdsMemo, lastUpdateAt }
+  return { teams, roundNamesSoftware, roundNamesHardware, isFrozen, celebrationAt, updatedIds: updatedIdsMemo, lastUpdateAt }
 }

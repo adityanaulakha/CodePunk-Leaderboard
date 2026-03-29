@@ -3,6 +3,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDocs,
   serverTimestamp,
   updateDoc,
   writeBatch,
@@ -40,6 +41,7 @@ export function normalizeTeamDoc(docSnap) {
   const normalized = {
     id: docSnap.id,
     name: String(data.name ?? ''),
+    track: String(data.track ?? 'software').toLowerCase(),
     scores,
     createdAt: data.createdAt ?? null,
     updatedAt: data.updatedAt ?? null,
@@ -56,13 +58,14 @@ export function assertFirebaseEnabled() {
   }
 }
 
-export async function addTeam({ name, scores = {} }) {
+export async function addTeam({ name, track = 'software', scores = {} }) {
   assertFirebaseEnabled()
-  const trimmedName = String(name ?? '').trim()
-  if (!trimmedName) throw new Error('Team name is required')
+  const trimmedName = String(name).trim()
+  if (!trimmedName) throw new Error('Team name is missing')
 
   await addDoc(collection(db, TEAMS_COLLECTION), {
     name: trimmedName,
+    track: String(track).toLowerCase(),
     scores,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -84,6 +87,14 @@ export async function updateTeamScores(teamId, passedScores) {
   })
 }
 
+export async function updateTeamTrack(teamId, track) {
+  assertFirebaseEnabled()
+  await updateDoc(doc(db, TEAMS_COLLECTION, teamId), {
+    track: String(track).toLowerCase(),
+    updatedAt: serverTimestamp()
+  })
+}
+
 export async function deleteTeam(teamId) {
   assertFirebaseEnabled()
   if (!teamId) throw new Error('Missing team id')
@@ -101,12 +112,13 @@ export async function bulkImportTeams(rows) {
   for (const row of rows) {
     const name = String(row.name ?? '').trim()
     if (!name) continue
-    const ref = doc(teamsCol)
+    const ref = doc(collection(db, TEAMS_COLLECTION))
     batch.set(ref, {
       name,
+      track: String(row.track || row.Track || 'software').toLowerCase(),
       scores: row.scores || {},
       createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     })
     added += 1
   }
@@ -116,11 +128,12 @@ export async function bulkImportTeams(rows) {
   return { added }
 }
 
-export async function updateRoundNames(roundsArray) {
+export async function updateRoundNames(track, roundsArray) {
   assertFirebaseEnabled()
   if (!Array.isArray(roundsArray)) throw new Error('roundsArray must be an array')
+  const field = track === 'hardware' ? 'rounds_hardware' : 'rounds_software'
   await setDoc(doc(db, SETTINGS_COLLECTION, CONFIG_DOC), {
-    rounds: roundsArray,
+    [field]: roundsArray,
     updatedAt: serverTimestamp()
   }, { merge: true })
 }
@@ -140,4 +153,38 @@ export async function triggerCelebration() {
     celebrationAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   }, { merge: true })
+}
+
+export async function renameRound(track, oldName, newName, currentRounds) {
+  assertFirebaseEnabled()
+  if (!oldName || !newName || oldName === newName) return
+
+  const updatedRounds = currentRounds.map(r => r === oldName ? newName : r)
+  const batch = writeBatch(db)
+  
+  const field = track === 'hardware' ? 'rounds_hardware' : 'rounds_software'
+  batch.set(doc(db, SETTINGS_COLLECTION, CONFIG_DOC), {
+    [field]: updatedRounds,
+    updatedAt: serverTimestamp()
+  }, { merge: true })
+
+  const snap = await getDocs(collection(db, TEAMS_COLLECTION))
+  for (const teamDoc of snap.docs) {
+    const data = teamDoc.data()
+    const teamTrack = String(data.track || 'software').toLowerCase()
+    if (teamTrack !== track) continue
+
+    const scores = data.scores || {}
+    if (scores[oldName] !== undefined) {
+      const val = scores[oldName]
+      delete scores[oldName]
+      scores[newName] = val
+      batch.update(teamDoc.ref, {
+        scores,
+        updatedAt: serverTimestamp()
+      })
+    }
+  }
+
+  await batch.commit()
 }

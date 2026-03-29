@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import Confetti from 'react-confetti'
@@ -12,8 +12,9 @@ const MotionDiv = motion.div
 
 export default function LeaderboardPage() {
   const { width, height } = useWindowSize()
-  const { teams, roundNames, isFrozen, celebrationAt, updatedIds, lastUpdateAt } = useTeamsRealtime()
+  const { teams, roundNamesSoftware, roundNamesHardware, isFrozen, celebrationAt, updatedIds, lastUpdateAt } = useTeamsRealtime()
 
+  const [activeTrack, setActiveTrack] = useState('software')
   const [showConfetti, setShowConfetti] = useState(false)
   useEffect(() => {
     if (!celebrationAt) return
@@ -88,6 +89,21 @@ export default function LeaderboardPage() {
           </div>
         ) : null}
 
+        <div className="flex gap-4 justify-center mt-6">
+          <button 
+            onClick={() => setActiveTrack('software')} 
+            className={`px-8 py-3 font-hero text-3xl border-4 transition-all uppercase tracking-widest ${activeTrack==='software' ? 'bg-gwen-cyan text-zinc-900 border-gwen-cyan scale-105 shadow-comic-cyan z-10' : 'bg-transparent text-zinc-400 border-zinc-700 shadow-comic hover:border-zinc-500'}`}
+          >
+            SOFTWARE
+          </button>
+          <button 
+            onClick={() => setActiveTrack('hardware')} 
+            className={`px-8 py-3 font-hero text-3xl border-4 transition-all uppercase tracking-widest ${activeTrack==='hardware' ? 'bg-2099-orange text-zinc-900 border-2099-orange scale-105 shadow-comic z-10' : 'bg-transparent text-zinc-400 border-zinc-700 shadow-comic hover:border-zinc-500'}`}
+          >
+            HARDWARE
+          </button>
+        </div>
+
         <div className="mt-8 relative">
           {isFrozen && (
             <div className="absolute inset-0 z-50 backdrop-blur-xl bg-zinc-950/60 flex items-center justify-center p-8 border-4 border-gwen-pink shadow-comic-pink">
@@ -102,13 +118,27 @@ export default function LeaderboardPage() {
             </div>
           )}
           
-          <div className={isFrozen ? 'opacity-30 pointer-events-none' : ''}>
-            <LeaderboardTable teams={teams} roundNames={roundNames} updatedIds={updatedIds} />
+          <div className={isFrozen ? 'opacity-30 pointer-events-none overflow-hidden' : 'overflow-hidden'}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTrack}
+                initial={{ opacity: 0, x: activeTrack === 'hardware' ? 50 : -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: activeTrack === 'hardware' ? -50 : 50 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+              >
+                <LeaderboardTable 
+                  teams={teams.filter(t => t.track === activeTrack)} 
+                  roundNames={activeTrack === 'hardware' ? roundNamesHardware : roundNamesSoftware} 
+                  updatedIds={updatedIds} 
+                />
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
 
         <div className="mt-10 inline-block font-hero text-xl bg-zinc-900 border-2 border-zinc-800 text-gwen-cyan px-4 py-2 shadow-comic skew-x-[-2deg]">
-          Total = {roundNames.join(' + ') || 'No rounds defined'}
+          Total = {(activeTrack === 'hardware' ? roundNamesHardware : roundNamesSoftware).join(' + ') || 'No rounds defined'}
         </div>
       </MotionDiv>
     </div>

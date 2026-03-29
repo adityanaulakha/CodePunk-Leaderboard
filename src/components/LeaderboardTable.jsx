@@ -32,10 +32,11 @@ function scoreTone(rank) {
   return 'text-gwen-cyan font-bold'
 }
 
-export default function LeaderboardTable({ teams, roundNames = [], updatedIds }) {
+export default function LeaderboardTable({ teams, roundNames = [], bonusNames = [], updatedIds }) {
+  const bonusColumns = bonusNames.length;
   const dynamicGridStyles = {
     display: 'grid',
-    gridTemplateColumns: `80px minmax(250px, 1fr) repeat(${roundNames.length}, minmax(100px, 1fr)) 120px`,
+    gridTemplateColumns: `80px minmax(250px, 1fr) repeat(${roundNames.length + bonusColumns}, minmax(100px, 1fr)) 120px`,
     alignItems: 'center'
   }
 
@@ -48,8 +49,9 @@ export default function LeaderboardTable({ teams, roundNames = [], updatedIds })
   });
 
   return (
-    <div className="overflow-x-auto scrollbar-thin pb-4">
-      <div className="min-w-[860px]">
+    <div className="border-4 border-zinc-800 bg-zinc-950/50 overflow-hidden">
+      <div className="overflow-x-auto overflow-y-hidden scrollbar-thin pb-4">
+        <div style={{ minWidth: `${800 + (bonusNames.length * 100)}px` }}>
         <div 
           style={dynamicGridStyles}
           className="gap-2 mb-4 px-4 py-3 font-hero text-2xl tracking-[0.1em] text-white bg-spidey-blue border-4 border-zinc-950 shadow-comic skew-x-[-2deg]"
@@ -58,6 +60,11 @@ export default function LeaderboardTable({ teams, roundNames = [], updatedIds })
           <div>TEAM NAME</div>
           {roundNames.map((r, i) => (
             <div key={i} className="text-right uppercase">{r}</div>
+          ))}
+          {bonusNames.map((b, i) => (
+             <div key={`hb_${i}`} className="text-right uppercase">
+               {b}
+             </div>
           ))}
           <div className="text-right">TOTAL</div>
         </div>
@@ -114,14 +121,27 @@ export default function LeaderboardTable({ teams, roundNames = [], updatedIds })
                   {roundNames.map((r, i) => (
                     <div key={i} className={`text-right font-hero text-3xl tabular-nums ${textTone(rank)}`}>
                       <motion.span
-                        key={team.scores?.[r] || 0}
+                        key={"R_"+(team.scores_avg?.[r] || 0)}
                         initial={{ scale: 1.5, color: '#FF00A0' }}
                         animate={{ scale: 1, color: '' }}
                         className="inline-block"
                       >
-                        {team.scores?.[r] || 0}
+                        {team.scores_avg?.[r] || 0}
                       </motion.span>
                     </div>
+                  ))}
+
+                  {bonusNames.map((b, i) => (
+                     <div key={`db_${i}`} className={`text-right font-hero text-3xl tabular-nums ${textTone(rank)}`}>
+                        <motion.span
+                          key={`B_${b}_${team.bonuses?.[b] || 0}`}
+                          initial={{ scale: 1.5, color: '#FF00A0' }}
+                          animate={{ scale: 1, color: '' }}
+                          className="inline-block"
+                        >
+                          {team.bonuses?.[b] || 0}
+                        </motion.span>
+                     </div>
                   ))}
 
                   <div className={`text-right font-hero text-4xl tabular-nums ${scoreTone(rank)} drop-shadow-[2px_2px_0_rgba(0,0,0,0.5)]`}>
@@ -141,6 +161,7 @@ export default function LeaderboardTable({ teams, roundNames = [], updatedIds })
           </AnimatePresence>
         </MotionDiv>
       </div>
+    </div>
     </div>
   )
 }

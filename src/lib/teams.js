@@ -3,6 +3,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   serverTimestamp,
   updateDoc,
@@ -15,39 +16,47 @@ export const TEAMS_COLLECTION = 'teams'
 export const SETTINGS_COLLECTION = 'settings'
 export const CONFIG_DOC = 'globals'
 
-export function computeTotal(scoresObj) {
-  if (!scoresObj) return 0
+export function computeTotal(teamData) {
   let total = 0
-  for (const v of Object.values(scoresObj)) {
+  
+  const avg = teamData.scores_avg || {}
+  for (const v of Object.values(avg)) {
     const num = Number(v)
     if (Number.isFinite(num)) total += num
   }
+  
+  const bonuses = teamData.bonuses || {}
+  for (const v of Object.values(bonuses)) {
+    const num = Number(v)
+    if (Number.isFinite(num)) total += num
+  }
+  
   return total
 }
 
 export function normalizeTeamDoc(docSnap) {
   const data = docSnap.data() || {}
   
-  // Backward compatibility + new map
-  const scores = { ...(data.scores || {}) }
-  const isMigrated = Object.keys(scores).length > 0
-  
-  if (!isMigrated) {
-    if (data.round1 !== undefined) scores['Round 1'] = Number(data.round1)
-    if (data.round2 !== undefined) scores['Round 2'] = Number(data.round2)
-    if (data.finalEval !== undefined) scores['Final'] = Number(data.finalEval)
+  let bonuses = data.bonuses
+  if (!bonuses) {
+     bonuses = {}
+     if (data.hackerRankScore !== undefined) bonuses['HackerRank'] = Number(data.hackerRankScore) || 0
+     if (data.riddleBonus !== undefined) bonuses['Riddle Bonus'] = Number(data.riddleBonus) || 0
   }
-
+  
   const normalized = {
     id: docSnap.id,
     name: String(data.name ?? ''),
     track: String(data.track ?? 'software').toLowerCase(),
-    scores,
+    scores: data.scores || {},
+    scores_avg: data.scores_avg || {},
+    judgeStatus: data.judgeStatus || {},
+    bonuses,
     createdAt: data.createdAt ?? null,
     updatedAt: data.updatedAt ?? null,
   }
 
-  return { ...normalized, total: computeTotal(scores) }
+  return { ...normalized, total: computeTotal(normalized) }
 }
 
 export function assertFirebaseEnabled() {
@@ -85,6 +94,96 @@ export async function updateTeamScores(teamId, passedScores) {
     scores: cleanedScores,
     updatedAt: serverTimestamp(),
   })
+}
+
+
+
+export async function updateTeamBonuses(teamId, bonusesObj) {
+  assertFirebaseEnabled()
+  const clean = {}
+  for (const [k, v] of Object.entries(bonusesObj || {})) {
+     clean[k] = Number(v) || 0
+  }
+  await updateDoc(doc(db, TEAMS_COLLECTION, teamId), {
+    bonuses: clean,
+    updatedAt: serverTimestamp()
+  })
+}
+
+export async function updateBonusNames(track, bonusesArray) {
+  assertFirebaseEnabled()
+  if (!Array.isArray(bonusesArray)) throw new Error('bonusesArray must be an array')
+  
+  // 1. Get current to see if we are deleting anything
+  const globalsRef = doc(db, SETTINGS_COLLECTION, CONFIG_DOC)
+  const snap = await getDoc(globalsRef)
+  const field = track === 'hardware' ? 'bonuses_hardware' : 'bonuses_software'
+  const oldBonuses = snap.exists() ? (snap.data()[field] || []) : []
+  
+  // 2. Perform the update
+  await setDoc(globalsRef, {
+    [field]: bonusesArray,
+    updatedAt: serverTimestamp()
+  }, { merge: true })
+
+  // 3. Purge data if a bonus was removed
+  const removed = oldBonuses.filter(b => !bonusesArray.includes(b))
+  if (removed.length > 0) {
+    await purgeTeamsData(track, 'bonuses', removed)
+  }
+}
+
+async function purgeTeamsData(track, mapField, keysToRemove) {
+  const snap = await getDocs(collection(db, TEAMS_COLLECTION))
+  let batch = writeBatch(db)
+  let count = 0
+  for (const teamDoc of snap.docs) {
+    const data = teamDoc.data()
+    const teamTrack = String(data.track || 'software').toLowerCase()
+    if (teamTrack !== track) continue
+
+    const map = data[mapField] || {}
+    let mutated = false
+    for (const k of keysToRemove) {
+      if (map[k] !== undefined) {
+        delete map[k]
+        mutated = true
+      }
+    }
+    if (mutated) {
+      batch.update(teamDoc.ref, { [mapField]: map, updatedAt: serverTimestamp() })
+      count++
+      if (count >= 400) {
+        await batch.commit()
+        batch = writeBatch(db)
+        count = 0
+      }
+    }
+  }
+  if (count > 0) await batch.commit()
+}
+
+export async function toggleRoundLock(track, roundName, currentLockedRounds = []) {
+  assertFirebaseEnabled()
+  const lockKey = `${track}_${roundName}`
+  let nextLocked = []
+  if (currentLockedRounds.includes(lockKey)) {
+    nextLocked = currentLockedRounds.filter(l => l !== lockKey)
+  } else {
+    nextLocked = [...currentLockedRounds, lockKey]
+  }
+  await setDoc(doc(db, SETTINGS_COLLECTION, CONFIG_DOC), {
+    lockedRounds: nextLocked,
+    updatedAt: serverTimestamp()
+  }, { merge: true })
+}
+
+export async function updateRubrics(rubricsMap) {
+  assertFirebaseEnabled()
+  await setDoc(doc(db, SETTINGS_COLLECTION, CONFIG_DOC), {
+    rubrics: rubricsMap,
+    updatedAt: serverTimestamp()
+  }, { merge: true })
 }
 
 export async function updateTeamTrack(teamId, track) {
@@ -131,11 +230,37 @@ export async function bulkImportTeams(rows) {
 export async function updateRoundNames(track, roundsArray) {
   assertFirebaseEnabled()
   if (!Array.isArray(roundsArray)) throw new Error('roundsArray must be an array')
+  
+  const globalsRef = doc(db, SETTINGS_COLLECTION, CONFIG_DOC)
+  const snap = await getDoc(globalsRef)
   const field = track === 'hardware' ? 'rounds_hardware' : 'rounds_software'
-  await setDoc(doc(db, SETTINGS_COLLECTION, CONFIG_DOC), {
+  const oldRounds = snap.exists() ? (snap.data()[field] || []) : []
+  
+  await setDoc(globalsRef, {
     [field]: roundsArray,
     updatedAt: serverTimestamp()
   }, { merge: true })
+
+  const removed = oldRounds.filter(r => !roundsArray.includes(r))
+  if (removed.length > 0) {
+    // 1. Purge from rubrics map
+    const rubrics = snap.exists() ? (snap.data().rubrics || {}) : {}
+    let rubricMutated = false
+    for (const r of removed) {
+      if (rubrics[`${track}_${r}`]) {
+        delete rubrics[`${track}_${r}`]
+        rubricMutated = true
+      }
+    }
+    if (rubricMutated) {
+      await setDoc(globalsRef, { rubrics, updatedAt: serverTimestamp() }, { merge: true })
+    }
+
+    // 2. Purge scores, scores_avg, and judgeStatus
+    await purgeTeamsData(track, 'scores', removed)
+    await purgeTeamsData(track, 'scores_avg', removed)
+    await purgeTeamsData(track, 'judgeStatus', removed)
+  }
 }
 
 export async function setLeaderboardFrozen(isFrozen) {
@@ -159,12 +284,26 @@ export async function renameRound(track, oldName, newName, currentRounds) {
   assertFirebaseEnabled()
   if (!oldName || !newName || oldName === newName) return
 
+  const globalsRef = doc(db, SETTINGS_COLLECTION, CONFIG_DOC)
+  const globalsSnap = await getDoc(globalsRef)
+  const data_globals = globalsSnap.data() || {}
+
   const updatedRounds = currentRounds.map(r => r === oldName ? newName : r)
-  const batch = writeBatch(db)
+  const batchCommit = writeBatch(db)
   
   const field = track === 'hardware' ? 'rounds_hardware' : 'rounds_software'
-  batch.set(doc(db, SETTINGS_COLLECTION, CONFIG_DOC), {
+  const rubrics = data_globals.rubrics || {}
+  const rubricKeyOld = `${track}_${oldName}`
+  const rubricKeyNew = `${track}_${newName}`
+  
+  if (rubrics[rubricKeyOld]) {
+    rubrics[rubricKeyNew] = rubrics[rubricKeyOld]
+    delete rubrics[rubricKeyOld]
+  }
+
+  batchCommit.set(globalsRef, {
     [field]: updatedRounds,
+    rubrics,
     updatedAt: serverTimestamp()
   }, { merge: true })
 
@@ -174,17 +313,69 @@ export async function renameRound(track, oldName, newName, currentRounds) {
     const teamTrack = String(data.track || 'software').toLowerCase()
     if (teamTrack !== track) continue
 
-    const scores = data.scores || {}
-    if (scores[oldName] !== undefined) {
-      const val = scores[oldName]
+    const updates = {}
+    
+    // Rename in scores
+    if (data.scores && data.scores[oldName] !== undefined) {
+      const scores = { ...data.scores }
+      scores[newName] = scores[oldName]
       delete scores[oldName]
-      scores[newName] = val
-      batch.update(teamDoc.ref, {
-        scores,
+      updates.scores = scores
+    }
+
+    // Rename in averages
+    if (data.scores_avg && data.scores_avg[oldName] !== undefined) {
+      const avg = { ...data.scores_avg }
+      avg[newName] = avg[oldName]
+      delete avg[oldName]
+      updates.scores_avg = avg
+    }
+
+    // Rename in judgeStatus
+    if (data.judgeStatus && data.judgeStatus[oldName] !== undefined) {
+      const status = { ...data.judgeStatus }
+      status[newName] = status[oldName]
+      delete status[oldName]
+      updates.judgeStatus = status
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await updateDoc(teamDoc.ref, { ...updates, updatedAt: serverTimestamp() })
+    }
+  }
+
+  await batchCommit.commit()
+}
+
+export async function renameBonus(track, oldName, newName, currentBonuses) {
+  assertFirebaseEnabled()
+  if (!oldName || !newName || oldName === newName) return
+
+  const updatedBonuses = currentBonuses.map(b => b === oldName ? newName : b)
+  const batchCommit = writeBatch(db)
+  
+  const field = track === 'hardware' ? 'bonuses_hardware' : 'bonuses_software'
+  batchCommit.set(doc(db, SETTINGS_COLLECTION, CONFIG_DOC), {
+    [field]: updatedBonuses,
+    updatedAt: serverTimestamp()
+  }, { merge: true })
+
+  const snap = await getDocs(collection(db, TEAMS_COLLECTION))
+  for (const teamDoc of snap.docs) {
+    const data = teamDoc.data()
+    const teamTrack = String(data.track || 'software').toLowerCase()
+    if (teamTrack !== track) continue
+
+    if (data.bonuses && data.bonuses[oldName] !== undefined) {
+      const bonuses = { ...data.bonuses }
+      bonuses[newName] = bonuses[oldName]
+      delete bonuses[oldName]
+      await updateDoc(teamDoc.ref, {
+        bonuses,
         updatedAt: serverTimestamp()
       })
     }
   }
 
-  await batch.commit()
+  await batchCommit.commit()
 }

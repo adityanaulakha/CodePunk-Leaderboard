@@ -14,12 +14,20 @@ function sortTeams(a, b) {
 
 function scoresChanged(prev, next) {
   if (!prev) return true
-  const prevScores = prev.scores || {}
-  const nextScores = next.scores || {}
-  const keys = new Set([...Object.keys(prevScores), ...Object.keys(nextScores)])
+  const prevScores = prev.scores_avg || {}
+  const nextScores = next.scores_avg || {}
+  let keys = new Set([...Object.keys(prevScores), ...Object.keys(nextScores)])
   for (const k of keys) {
     if (prevScores[k] !== nextScores[k]) return true
   }
+  
+  const prevBonus = prev.bonuses || {}
+  const nextBonus = next.bonuses || {}
+  keys = new Set([...Object.keys(prevBonus), ...Object.keys(nextBonus)])
+  for (const k of keys) {
+    if (prevBonus[k] !== nextBonus[k]) return true
+  }
+  
   return false
 }
 
@@ -27,8 +35,14 @@ export default function useTeamsRealtime() {
   const [teams, setTeams] = useState([])
   const [roundNamesSoftware, setRoundNamesSoftware] = useState(['Round 1', 'Round 2', 'Final'])
   const [roundNamesHardware, setRoundNamesHardware] = useState(['Round 1', 'Round 2', 'Final'])
+  const [bonusNamesSoftware, setBonusNamesSoftware] = useState(['HackerRank', 'Riddle Bonus'])
+  const [bonusNamesHardware, setBonusNamesHardware] = useState([])
   const [isFrozen, setIsFrozen] = useState(false)
   const [celebrationAt, setCelebrationAt] = useState(null)
+  const [activeJudges, setActiveJudges] = useState([])
+  const [judgesList, setJudgesList] = useState([])
+  const [rubrics, setRubrics] = useState({})
+  const [lockedRounds, setLockedRounds] = useState([])
   const [updatedIds, setUpdatedIds] = useState(() => new Set())
   const [lastUpdateAt, setLastUpdateAt] = useState(null)
 
@@ -92,21 +106,52 @@ export default function useTeamsRealtime() {
         if (Array.isArray(data.rounds_hardware)) setRoundNamesHardware(data.rounds_hardware)
         else if (Array.isArray(data.rounds)) setRoundNamesHardware(data.rounds)
 
+        if (Array.isArray(data.bonuses_software)) setBonusNamesSoftware(data.bonuses_software)
+        if (Array.isArray(data.bonuses_hardware)) setBonusNamesHardware(data.bonuses_hardware)
+
         setIsFrozen(Boolean(data.isFrozen))
+        if (data.activeJudges) setActiveJudges(data.activeJudges)
+        if (data.rubrics) setRubrics(data.rubrics)
+        if (data.lockedRounds) setLockedRounds(data.lockedRounds)
         if (data.celebrationAt) {
           setCelebrationAt(data.celebrationAt.toMillis ? data.celebrationAt.toMillis() : Date.now())
         }
       }
     })
 
+    const unsubJudges = onSnapshot(collection(db, 'judges'), (snap) => {
+      const parsed = []
+      snap.forEach(d => {
+        parsed.push({ ...d.data(), id: d.id })
+      })
+      // Sort Judges alphabetically
+      parsed.sort((a,b) => a.name?.localeCompare(b.name))
+      setJudgesList(parsed)
+    })
+
     return () => {
       unsubTeams()
       unsubSettings()
+      unsubJudges()
       for (const t of timers.values()) clearTimeout(t)
       timers.clear()
     }
   }, [])
 
   const updatedIdsMemo = useMemo(() => updatedIds, [updatedIds])
-  return { teams, roundNamesSoftware, roundNamesHardware, isFrozen, celebrationAt, updatedIds: updatedIdsMemo, lastUpdateAt }
+  return { 
+    teams, 
+    roundNamesSoftware, 
+    roundNamesHardware, 
+    bonusNamesSoftware,
+    bonusNamesHardware,
+    isFrozen, 
+    celebrationAt, 
+    updatedIds: updatedIdsMemo, 
+    lastUpdateAt,
+    activeJudges,
+    judgesList,
+    rubrics,
+    lockedRounds
+  }
 }

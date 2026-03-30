@@ -81,6 +81,8 @@ export default function AdminPage() {
   const [newRoundName, setNewRoundName] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [manageTeamSearchQuery, setManageTeamSearchQuery] = useState('')
+  const [scoreViewTrack, setScoreViewTrack] = useState('software')
+  const [expandedScoreTeam, setExpandedScoreTeam] = useState(null)
   const [busy, setBusy] = useState(false)
   const [toast, setToast] = useState(null)
   const [csvState, setCsvState] = useState({ fileName: '', parsedRows: [], error: '', added: null })
@@ -411,7 +413,8 @@ export default function AdminPage() {
                 { id: 'rubrics', label: 'MANAGE RUBRICS', color: 'gwen-cyan' },
                 { id: 'judges', label: 'MANAGE JUDGES', color: 'spidey-red' },
                 { id: 'teams', label: 'MANAGE TEAMS', color: 'gwen-pink' },
-                { id: 'rounds', label: 'MANAGE ROUNDS', color: '2099-orange' }
+                { id: 'rounds', label: 'MANAGE ROUNDS', color: '2099-orange' },
+                { id: 'scores', label: 'SCORE VIEWER', color: 'gwen-pink' }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -837,9 +840,252 @@ export default function AdminPage() {
               </div>
             )}
 
+            {/* SCORE VIEWER TAB */}
+            {activeTab === 'scores' && (() => {
+              const viewRounds = scoreViewTrack === 'hardware' ? roundNamesHardware : roundNamesSoftware
+              const viewBonuses = scoreViewTrack === 'hardware' ? bonusNamesHardware : bonusNamesSoftware
+              const viewTeams = [...teams]
+                .filter(t => t.track === scoreViewTrack)
+                .sort((a, b) => b.total - a.total)
+
+              const handleExportCSV = () => {
+                const activeJudgeNames = judgesList.reduce((map, j) => { map[j.id] = j.name; return map }, {})
+                const judgeIds = judgesList.filter(j => activeJudges.includes(j.id)).map(j => j.id)
+
+                // Build header row
+                const headers = ['Rank', 'Team Name']
+                for (const r of viewRounds) {
+                  for (const jid of judgeIds) {
+                    headers.push(`${r} - ${activeJudgeNames[jid] || jid.slice(0,6)}`)
+                  }
+                  headers.push(`${r} (Avg)`)
+                }
+                for (const b of viewBonuses) headers.push(b)
+                headers.push('Total')
+
+                // Build data rows
+                const rows = viewTeams.map((t, idx) => {
+                  const row = [idx + 1, `"${t.name}"`]
+                  for (const r of viewRounds) {
+                    for (const jid of judgeIds) {
+                      const val = t.scores?.[r]?.[jid]
+                      if (val && typeof val === 'object') row.push(val.total ?? 0)
+                      else row.push(val ?? '')
+                    }
+                    row.push(t.scores_avg?.[r] || 0)
+                  }
+                  for (const b of viewBonuses) row.push(t.bonuses?.[b] || 0)
+                  row.push(t.total)
+                  return row
+                })
+
+                const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `codepunk_scores_${scoreViewTrack}_${new Date().toISOString().slice(0,10)}.csv`
+                a.click()
+                URL.revokeObjectURL(url)
+              }
+              
+              return (
+                <div className="border-4 border-gwen-pink bg-zinc-900/90 backdrop-blur-md shadow-comic-pink relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gwen-pink/10 rounded-full blur-3xl pointer-events-none"></div>
+                  
+                  {/* Header */}
+                  <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6 p-6 lg:p-8 border-b-4 border-zinc-800">
+                    <div>
+                      <h2 className="font-hero text-5xl uppercase text-white drop-shadow-[3px_3px_0_#111]">Score Viewer</h2>
+                      <p className="text-gwen-pink font-bold tracking-widest uppercase text-sm mt-2">Read-only backup · Click a team to expand judge breakdown</p>
+                    </div>
+                    <div className="flex gap-4 items-center">
+                      <span className="text-zinc-500 font-bold text-xs uppercase tracking-widest">{viewTeams.length} Teams</span>
+                      <select
+                        value={scoreViewTrack}
+                        onChange={e => { setScoreViewTrack(e.target.value); setExpandedScoreTeam(null) }}
+                        className="border-4 border-gwen-pink bg-zinc-950 px-6 py-3 font-hero text-2xl text-zinc-100 outline-none focus:border-white transition-colors cursor-pointer shadow-[2px_2px_0_#111]"
+                      >
+                        <option value="software">SOFTWARE TRACK</option>
+                        <option value="hardware">HARDWARE TRACK</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Single horizontal scroll container */}
+                  <div className="relative z-10 overflow-x-auto scrollbar-thin">
+                    <div style={{ minWidth: `${600 + viewRounds.length * 110 + viewBonuses.length * 100}px` }}>
+                      
+                      {/* Column Header Bar */}
+                      <div className="grid gap-0 bg-zinc-950 border-b-4 border-zinc-800 px-4 py-3 sticky top-0 z-20"
+                        style={{ gridTemplateColumns: `60px 1fr ${viewRounds.map(() => '100px').join(' ')} ${viewBonuses.map(() => '90px').join(' ')} 100px` }}
+                      >
+                        <div className="font-hero text-sm uppercase tracking-widest text-zinc-500">#</div>
+                        <div className="font-hero text-sm uppercase tracking-widest text-zinc-500">Team Name</div>
+                        {viewRounds.map(r => <div key={r} className="font-hero text-sm uppercase tracking-widest text-zinc-500 text-center">{r}</div>)}
+                        {viewBonuses.map(b => <div key={`bh_${b}`} className="font-hero text-sm uppercase tracking-widest text-gwen-pink/60 text-center">{b}</div>)}
+                        <div className="font-hero text-sm uppercase tracking-widest text-zinc-500 text-center">Total</div>
+                      </div>
+
+                      {/* Team Rows */}
+                      {viewTeams.map((t, idx) => {
+                        const rank = idx + 1
+                        const isExpanded = expandedScoreTeam === t.id
+                        const isTop3 = rank <= 3
+                        const accentColor = rank === 1 ? 'spidey-red' : rank === 2 ? 'gwen-cyan' : rank === 3 ? '2099-orange' : 'zinc-700'
+
+                        return (
+                          <div key={t.id}>
+                            {/* Overview Row */}
+                            <div
+                              onClick={() => setExpandedScoreTeam(isExpanded ? null : t.id)}
+                              className={`grid gap-0 items-center px-4 py-3 cursor-pointer transition-all border-b-2 border-zinc-800/50 hover:bg-zinc-800/40 ${
+                                isExpanded ? 'bg-zinc-800/60 border-l-4 border-l-gwen-pink' : isTop3 ? 'bg-zinc-900/60' : (idx % 2 === 0 ? 'bg-zinc-900/20' : 'bg-zinc-950/20')
+                              }`}
+                              style={{ gridTemplateColumns: `60px 1fr ${viewRounds.map(() => '100px').join(' ')} ${viewBonuses.map(() => '90px').join(' ')} 100px` }}
+                            >
+                              {/* Rank */}
+                              <div className={`font-hero text-2xl tabular-nums ${isTop3 ? `text-${accentColor}` : 'text-zinc-500'}`}>
+                                {rank}
+                              </div>
+
+                              {/* Team Name */}
+                              <div className="flex items-center gap-3 min-w-0 pr-4">
+                                {isTop3 && <div className={`w-2 h-8 bg-${accentColor} flex-shrink-0`}></div>}
+                                <div className="min-w-0">
+                                  <div className={`font-hero text-xl truncate ${isTop3 ? 'text-white' : 'text-zinc-300'}`}>{t.name}</div>
+                                </div>
+                              </div>
+
+                              {/* Round Averages */}
+                              {viewRounds.map(r => {
+                                const avg = t.scores_avg?.[r] || 0
+                                const status = t.judgeStatus?.[r] || {}
+                                return (
+                                  <div key={r} className="text-center">
+                                    <span className={`font-hero text-xl tabular-nums ${avg > 0 ? 'text-gwen-cyan' : 'text-zinc-600'}`}>{avg}</span>
+                                    {status.isComplete && <span className="block text-[9px] text-gwen-cyan/60 font-black tracking-widest">✓</span>}
+                                  </div>
+                                )
+                              })}
+
+                              {/* Bonuses */}
+                              {viewBonuses.map(b => (
+                                <div key={`bd_${b}`} className="text-center">
+                                  <span className={`font-hero text-xl tabular-nums ${(t.bonuses?.[b] || 0) > 0 ? 'text-zinc-300' : 'text-zinc-600'}`}>{t.bonuses?.[b] || 0}</span>
+                                </div>
+                              ))}
+
+                              {/* Total */}
+                              <div className="text-center">
+                                <span className={`font-hero text-2xl font-black tabular-nums ${isTop3 ? 'text-white' : 'text-gwen-cyan'}`}>{t.total}</span>
+                              </div>
+                            </div>
+
+                            {/* Expanded Judge Breakdown */}
+                            {isExpanded && (
+                              <div className="bg-zinc-950/80 border-b-4 border-gwen-pink/30 border-l-4 border-l-gwen-pink px-6 py-5">
+                                <div className="text-xs text-gwen-pink font-black uppercase tracking-[0.2em] mb-4">Per-Judge Breakdown — {t.name}</div>
+                                
+                                {viewRounds.length > 0 && (
+                                  <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${Math.min(viewRounds.length, 3)}, 1fr)` }}>
+                                    {viewRounds.map(r => {
+                                      const judgeScores = t.scores?.[r] || {}
+                                      const status = t.judgeStatus?.[r] || {}
+                                      const submitted = status.submittedBy || []
+                                      const avg = t.scores_avg?.[r] || 0
+                                      const rubricDef = rubrics?.[`${scoreViewTrack}_${r}`] || []
+
+                                      return (
+                                        <div key={r} className="border-2 border-zinc-800 bg-zinc-900/50 p-4">
+                                          <div className="flex justify-between items-center mb-3 pb-2 border-b border-zinc-800">
+                                            <span className="font-hero text-lg uppercase tracking-widest text-white">{r}</span>
+                                            <span className={`font-hero text-lg tabular-nums ${avg > 0 ? 'text-gwen-cyan' : 'text-zinc-600'}`}>AVG: {avg}</span>
+                                          </div>
+
+                                          {submitted.length === 0 ? (
+                                            <div className="text-zinc-600 text-xs font-bold uppercase tracking-widest py-2">No submissions yet</div>
+                                          ) : (
+                                            <div className="space-y-2">
+                                              {submitted.map(jid => {
+                                                const judge = judgesList.find(j => j.id === jid)
+                                                const jName = judge ? judge.name : jid.slice(0, 8)
+                                                const val = judgeScores[jid]
+                                                const isObj = val && typeof val === 'object'
+                                                const totalDisplay = isObj ? val.total : (val ?? '-')
+
+                                                return (
+                                                  <div key={jid} className="bg-zinc-950 border border-zinc-800 p-2">
+                                                    <div className="flex justify-between items-center">
+                                                      <span className="text-sm text-zinc-400 font-bold truncate max-w-[120px]">{jName}</span>
+                                                      <span className="font-hero text-lg text-white tabular-nums">{totalDisplay}</span>
+                                                    </div>
+                                                    {isObj && val.parameters && rubricDef.length > 0 && (
+                                                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                                                        {rubricDef.map(cr => (
+                                                          <span key={cr.id} className="text-[10px] text-zinc-500">
+                                                            {cr.label}: <span className="text-zinc-400 font-mono">{val.parameters?.[cr.id] ?? '-'}</span>/{cr.max}
+                                                          </span>
+                                                        ))}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                )
+                                              })}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                )}
+
+                                {viewBonuses.length > 0 && (
+                                  <div className="mt-4 flex flex-wrap gap-3">
+                                    {viewBonuses.map(b => (
+                                      <div key={b} className="border border-zinc-800 bg-zinc-900/50 px-4 py-2 flex gap-3 items-center">
+                                        <span className="text-xs text-zinc-500 font-bold uppercase tracking-widest">{b}</span>
+                                        <span className="font-hero text-lg text-zinc-300 tabular-nums">{t.bonuses?.[b] || 0}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+
+                      {viewTeams.length === 0 && (
+                        <div className="p-12 text-center font-hero text-2xl text-zinc-600 uppercase tracking-widest">No teams in this track</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="relative z-10 px-6 py-4 bg-zinc-950/50 border-t-2 border-zinc-800 flex flex-wrap gap-6 items-center justify-between">
+                    <div className="text-xs text-zinc-500 font-bold uppercase tracking-widest">
+                      {viewTeams.length} teams · {viewRounds.length} rounds · {viewBonuses.length} bonuses · Read-only
+                    </div>
+                    <div className="flex gap-4 items-center">
+                      <div className="text-xs text-zinc-600 font-bold uppercase tracking-widest">
+                        Click any team row to expand
+                      </div>
+                      <button
+                        onClick={handleExportCSV}
+                        className="flex items-center gap-2 px-6 py-2 border-4 border-gwen-pink bg-gwen-pink text-zinc-900 font-hero text-xl uppercase tracking-widest shadow-[4px_4px_0_#111] hover:-translate-y-1 hover:shadow-[6px_6px_0_#111] transition-all"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3"/></svg>
+                        EXPORT CSV
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
+
           </div>
         )}
-
         {toast && (
           <div className={`fixed bottom-6 right-6 z-50 border-4 px-6 py-4 font-bold shadow-comic ${toast.type==='error'?'bg-spidey-red':'bg-gwen-cyan text-zinc-900'}`}>
             {toast.message}

@@ -6,9 +6,14 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
+    function isJudge() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/judges/$(request.auth.uid));
+    }
+
     match /teams/{teamId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() || isJudge();
     }
 
     match /settings/{docId} {
@@ -19,6 +24,11 @@ service cloud.firestore {
     match /admins/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if false;
+    }
+
+    match /judges/{uid} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }

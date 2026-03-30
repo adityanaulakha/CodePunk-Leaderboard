@@ -12,7 +12,7 @@ const MotionDiv = motion.div
 
 export default function LeaderboardPage() {
   const { width, height } = useWindowSize()
-  const { teams, roundNamesSoftware, roundNamesHardware, isFrozen, celebrationAt, updatedIds, lastUpdateAt } = useTeamsRealtime()
+  const { teams, roundNamesSoftware, roundNamesHardware, bonusNamesSoftware, bonusNamesHardware, isFrozen, celebrationAt, updatedIds, lastUpdateAt } = useTeamsRealtime()
 
   const [activeTrack, setActiveTrack] = useState('software')
   const [showConfetti, setShowConfetti] = useState(false)
@@ -29,7 +29,7 @@ export default function LeaderboardPage() {
   }, [celebrationAt])
 
   return (
-    <div className="min-h-screen relative overflow-hidden text-zinc-100">
+    <div className="min-h-screen relative overflow-x-clip text-zinc-100">
       {showConfetti && (
         <Confetti 
           width={width} 
@@ -73,6 +73,12 @@ export default function LeaderboardPage() {
 
           <div className="flex items-center justify-between gap-4 md:justify-end">
             <LiveIndicator lastUpdateAt={lastUpdateAt} />
+            <Link
+              to="/judge"
+              className="font-hero text-xl rounded-none border-2 border-zinc-900 bg-spidey-blue hover:bg-gwen-pink px-6 py-2 uppercase tracking-widest text-zinc-900 transition-all shadow-comic hover:-translate-y-1 hover:-translate-x-1 hover:shadow-comic-cyan"
+            >
+              Judge Portal
+            </Link>
             <Link
               to="/admin"
               className="font-hero text-xl rounded-none border-2 border-zinc-900 bg-gwen-cyan hover:bg-gwen-pink px-6 py-2 uppercase tracking-widest text-zinc-900 transition-all shadow-comic hover:-translate-y-1 hover:-translate-x-1 hover:shadow-comic-cyan"
@@ -118,7 +124,7 @@ export default function LeaderboardPage() {
             </div>
           )}
           
-          <div className={isFrozen ? 'opacity-30 pointer-events-none overflow-hidden' : 'overflow-hidden'}>
+          <div className={`max-w-full ${isFrozen ? 'opacity-30 pointer-events-none' : ''}`}>
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTrack}
@@ -130,6 +136,7 @@ export default function LeaderboardPage() {
                 <LeaderboardTable 
                   teams={teams.filter(t => t.track === activeTrack)} 
                   roundNames={activeTrack === 'hardware' ? roundNamesHardware : roundNamesSoftware} 
+                  bonusNames={activeTrack === 'hardware' ? bonusNamesHardware : bonusNamesSoftware}
                   updatedIds={updatedIds} 
                 />
               </motion.div>
@@ -138,7 +145,10 @@ export default function LeaderboardPage() {
         </div>
 
         <div className="mt-10 inline-block font-hero text-xl bg-zinc-900 border-2 border-zinc-800 text-gwen-cyan px-4 py-2 shadow-comic skew-x-[-2deg]">
-          Total = {(activeTrack === 'hardware' ? roundNamesHardware : roundNamesSoftware).join(' + ') || 'No rounds defined'}
+          Total = {[
+            ...(activeTrack === 'hardware' ? roundNamesHardware : roundNamesSoftware),
+            ...(activeTrack === 'hardware' ? bonusNamesHardware : bonusNamesSoftware)
+          ].join(' + ')}
         </div>
       </MotionDiv>
     </div>

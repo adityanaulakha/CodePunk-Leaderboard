@@ -379,3 +379,27 @@ export async function renameBonus(track, oldName, newName, currentBonuses) {
 
   await batchCommit.commit()
 }
+
+// Delete ALL
+export async function deleteAllTeams() {
+  assertFirebaseEnabled()
+  const snap = await getDocs(collection(db, TEAMS_COLLECTION))
+  if (snap.empty) return
+
+  let batch = writeBatch(db)
+  let count = 0
+
+  for (const teamDoc of snap.docs) {
+    batch.delete(teamDoc.ref)
+    count++
+    if (count >= 400) {
+      await batch.commit()
+      batch = writeBatch(db)
+      count = 0
+    }
+  }
+
+  if (count > 0) {
+    await batch.commit()
+  }
+}

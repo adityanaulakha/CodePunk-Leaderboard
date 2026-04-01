@@ -8,7 +8,7 @@ import AdminLogin from '../components/AdminLogin.jsx'
 import LeaderboardTable from '../components/LeaderboardTable.jsx'
 import useTeamsRealtime from '../hooks/useTeamsRealtime.js'
 import { auth, db, firebaseEnabled } from '../lib/firebase.js'
-import { addTeam, bulkImportTeams, deleteTeam, updateTeamScores, updateRoundNames, setLeaderboardFrozen, triggerCelebration, renameRound, updateTeamTrack, updateTeamBonuses, updateRubrics, updateBonusNames, renameBonus, toggleRoundLock } from '../lib/teams.js'
+import { addTeam, bulkImportTeams, deleteTeam, deleteAllTeams, updateTeamScores, updateRoundNames, setLeaderboardFrozen, triggerCelebration, renameRound, updateTeamTrack, updateTeamBonuses, updateRubrics, updateBonusNames, renameBonus, toggleRoundLock } from '../lib/teams.js'
 import { addJudge, removeJudge, submitScore, updateJudgeName } from '../lib/judges.js'
 
 const MotionDiv = motion.div
@@ -203,6 +203,18 @@ export default function AdminPage() {
     if (!window.confirm(`Delete team "${name}"?`)) return
     await deleteTeam(teamId)
     setToast({ type: 'success', message: 'Team deleted' })
+  })
+
+  const handleDeleteAllTeams = wrapAsync(async () => {
+    const confirm1 = window.confirm("WARNING: Are you sure you want to delete ALL teams? This cannot be undone.")
+    if (!confirm1) return
+    const confirm2 = window.prompt("Type 'DELETE ALL' to confirm:")
+    if (confirm2 !== "DELETE ALL") {
+       setToast({ type: 'error', message: 'Mass deletion cancelled' })
+       return
+    }
+    await deleteAllTeams()
+    setToast({ type: 'success', message: 'All teams successfully deleted' })
   })
 
   const activeRoundNames = roundManageTrack === 'hardware' ? roundNamesHardware : roundNamesSoftware
@@ -747,13 +759,25 @@ export default function AdminPage() {
                 <div className="border-4 border-zinc-800 bg-zinc-900/90 backdrop-blur-md p-6 lg:p-8 shadow-[8px_8px_0_#111]">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                     <h3 className="font-hero text-5xl uppercase text-white drop-shadow-[3px_3px_0_#111]">Team Roster</h3>
-                    <input
-                      type="text"
-                      placeholder="Search teams..."
-                      value={manageTeamSearchQuery}
-                      onChange={(e) => setManageTeamSearchQuery(e.target.value)}
-                      className="border-2 border-zinc-600 bg-zinc-950 px-4 py-3 text-zinc-100 outline-none focus:border-gwen-cyan transition-all w-full md:w-64 font-hero text-2xl placeholder:text-zinc-600 shadow-comic"
-                    />
+                    <div className="flex items-center gap-4 w-full md:w-auto">
+                      <input
+                        type="text"
+                        placeholder="Search teams..."
+                        value={manageTeamSearchQuery}
+                        onChange={(e) => setManageTeamSearchQuery(e.target.value)}
+                        className="border-2 border-zinc-600 bg-zinc-950 px-4 py-3 text-zinc-100 outline-none focus:border-gwen-cyan transition-all flex-1 md:w-64 font-hero text-2xl placeholder:text-zinc-600 shadow-comic"
+                      />
+                      {teams.length > 0 && (
+                        <button
+                          onClick={handleDeleteAllTeams}
+                          disabled={busy}
+                          className="font-hero text-xl px-4 py-3 bg-spidey-red text-white uppercase tracking-widest hover:bg-white hover:text-spidey-red border-2 border-spidey-red transition-colors shadow-comic-red"
+                          title="Delete all teams"
+                        >
+                          DELETE ALL
+                        </button>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">

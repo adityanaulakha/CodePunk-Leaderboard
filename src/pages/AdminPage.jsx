@@ -8,7 +8,7 @@ import AdminLogin from '../components/AdminLogin.jsx'
 import LeaderboardTable from '../components/LeaderboardTable.jsx'
 import useTeamsRealtime from '../hooks/useTeamsRealtime.js'
 import { auth, db, firebaseEnabled } from '../lib/firebase.js'
-import { addTeam, bulkImportTeams, deleteTeam, deleteAllTeams, updateTeamScores, updateRoundNames, setLeaderboardFrozen, triggerCelebration, renameRound, updateTeamTrack, updateTeamBonuses, updateRubrics, updateBonusNames, renameBonus, toggleRoundLock } from '../lib/teams.js'
+import { addTeam, bulkImportTeams, deleteTeam, deleteAllTeams, resetBonusScores, resetRoundScores, updateTeamScores, updateRoundNames, setLeaderboardFrozen, triggerCelebration, renameRound, updateTeamTrack, updateTeamBonuses, updateRubrics, updateBonusNames, renameBonus, toggleRoundLock } from '../lib/teams.js'
 import { addJudge, removeJudge, submitScore, updateJudgeName } from '../lib/judges.js'
 
 const MotionDiv = motion.div
@@ -217,6 +217,30 @@ export default function AdminPage() {
     setToast({ type: 'success', message: 'All teams successfully deleted' })
   })
 
+  const handleResetRoundScores = wrapAsync(async () => {
+    const confirm1 = window.confirm(`WARNING: Are you sure you want to completely clear ALL MAIN ROUND SCORES for the ${roundManageTrack.toUpperCase()} track? This cannot be undone.`)
+    if (!confirm1) return
+    const confirm2 = window.prompt("Type 'RESET SCORES' to confirm:")
+    if (confirm2 !== "RESET SCORES") {
+       setToast({ type: 'error', message: 'Score reset cancelled' })
+       return
+    }
+    await resetRoundScores(roundManageTrack)
+    setToast({ type: 'success', message: `${roundManageTrack.toUpperCase()} round scores successfully reset` })
+  })
+
+  const handleResetBonusScores = wrapAsync(async () => {
+    const confirm1 = window.confirm(`WARNING: Are you sure you want to completely clear ALL BONUS SCORES for the ${bonusManageTrack.toUpperCase()} track? This cannot be undone.`)
+    if (!confirm1) return
+    const confirm2 = window.prompt("Type 'RESET BONUSES' to confirm:")
+    if (confirm2 !== "RESET BONUSES") {
+       setToast({ type: 'error', message: 'Bonus reset cancelled' })
+       return
+    }
+    await resetBonusScores(bonusManageTrack)
+    setToast({ type: 'success', message: `${bonusManageTrack.toUpperCase()} bonus scores successfully reset` })
+  })
+
   const activeRoundNames = roundManageTrack === 'hardware' ? roundNamesHardware : roundNamesSoftware
 
   const handleAddRound = wrapAsync(async (e) => {
@@ -352,9 +376,10 @@ export default function AdminPage() {
             <div className="text-xs font-bold uppercase tracking-[0.3em] text-gwen-cyan">Organizer Dashboard</div>
             <h1 className="mt-2 font-hero text-5xl tracking-widest text-zinc-100 uppercase drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">Admin Panel</h1>
           </div>
-          <div className="flex gap-4">
-            <Link to="/" className="font-hero text-lg border-2 border-zinc-900 bg-gwen-pink px-5 py-2 uppercase tracking-widest text-zinc-900 shadow-comic hover:-translate-y-1 hover:-translate-x-1">Public Leaderboard</Link>
-            {user && <button onClick={() => signOut(auth)} className="font-hero text-lg border-2 border-zinc-900 bg-zinc-200 px-5 py-2 uppercase tracking-widest text-zinc-900 shadow-comic hover:-translate-y-1">Sign out</button>}
+          <div className="flex gap-4 items-center flex-wrap justify-end">
+            {canUseAdmin && <Link to="/podium" className="font-hero text-lg border-2 border-slate-700 bg-zinc-900 px-5 py-2 uppercase tracking-widest text-white shadow-[4px_4px_0_#FFF] hover:-translate-y-1 transition-all">🏆 Podium Mode</Link>}
+            <Link to="/" className="font-hero text-lg border-2 border-zinc-900 bg-gwen-pink px-5 py-2 uppercase tracking-widest text-zinc-900 shadow-comic hover:-translate-y-1 hover:-translate-x-1 transition-all">Public Leaderboard</Link>
+            {user && <button onClick={() => signOut(auth)} className="font-hero text-lg border-2 border-zinc-900 bg-zinc-200 px-5 py-2 uppercase tracking-widest text-zinc-900 shadow-comic hover:-translate-y-1 transition-all">Sign out</button>}
           </div>
         </div>
 
@@ -454,14 +479,24 @@ export default function AdminPage() {
                       <h2 className="font-hero text-5xl uppercase text-white drop-shadow-[3px_3px_0_#111]">Manage Bonus Types</h2>
                       <p className="text-spidey-blue font-bold tracking-widest uppercase text-sm mt-2">Configure extra score columns</p>
                     </div>
-                    <select 
-                      value={bonusManageTrack} 
-                      onChange={e => setBonusManageTrack(e.target.value)} 
-                      className="border-4 border-spidey-blue bg-zinc-950 px-6 py-3 font-hero text-2xl text-zinc-100 outline-none focus:border-white transition-colors cursor-pointer shadow-[4px_4px_0_#111]"
-                    >
-                      <option value="software">SOFTWARE BONUSES</option>
-                      <option value="hardware">HARDWARE BONUSES</option>
-                    </select>
+                    <div className="flex gap-4 items-center flex-wrap">
+                      <select 
+                        value={bonusManageTrack} 
+                        onChange={e => setBonusManageTrack(e.target.value)} 
+                        className="border-4 border-spidey-blue bg-zinc-950 px-6 py-3 font-hero text-2xl text-zinc-100 outline-none focus:border-white transition-colors cursor-pointer shadow-[4px_4px_0_#111]"
+                      >
+                        <option value="software">SOFTWARE BONUSES</option>
+                        <option value="hardware">HARDWARE BONUSES</option>
+                      </select>
+                      <button
+                        onClick={handleResetBonusScores}
+                        disabled={busy}
+                        className="font-hero text-xl px-4 py-3 bg-spidey-red text-white uppercase tracking-widest hover:bg-white hover:text-spidey-red border-2 border-spidey-red transition-colors shadow-comic-red"
+                        title={`Reset ${bonusManageTrack} Bonus Scores`}
+                      >
+                        RESET SCORES
+                      </button>
+                    </div>
                   </div>
 
                   <form onSubmit={handleAddBonus} className="flex flex-col sm:flex-row gap-4 max-w-4xl mx-auto bg-zinc-950 p-6 border-4 border-zinc-700 shadow-comic relative mb-8">
@@ -818,14 +853,24 @@ export default function AdminPage() {
                       <h2 className="font-hero text-5xl uppercase text-white drop-shadow-[3px_3px_0_#111]">Column Structure</h2>
                       <p className="text-2099-orange font-bold tracking-widest uppercase text-sm mt-2">Manage scoring factors</p>
                     </div>
-                    <select 
-                      value={roundManageTrack} 
-                      onChange={e => setRoundManageTrack(e.target.value)} 
-                      className="border-4 border-2099-orange bg-zinc-950 px-6 py-3 font-hero text-2xl text-zinc-100 outline-none focus:border-white transition-colors cursor-pointer shadow-[4px_4px_0_#111]"
-                    >
-                      <option value="software">SOFTWARE ROUNDS</option>
-                      <option value="hardware">HARDWARE ROUNDS</option>
-                    </select>
+                    <div className="flex gap-4 items-center flex-wrap">
+                      <select 
+                        value={roundManageTrack} 
+                        onChange={e => setRoundManageTrack(e.target.value)} 
+                        className="border-4 border-2099-orange bg-zinc-950 px-6 py-3 font-hero text-2xl text-zinc-100 outline-none focus:border-white transition-colors cursor-pointer shadow-[4px_4px_0_#111]"
+                      >
+                        <option value="software">SOFTWARE ROUNDS</option>
+                        <option value="hardware">HARDWARE ROUNDS</option>
+                      </select>
+                      <button
+                        onClick={handleResetRoundScores}
+                        disabled={busy}
+                        className="font-hero text-xl px-4 py-3 bg-spidey-red text-white uppercase tracking-widest hover:bg-white hover:text-spidey-red border-2 border-spidey-red transition-colors shadow-comic-red"
+                        title={`Reset ${roundManageTrack} Main Round Scores`}
+                      >
+                        RESET SCORES
+                      </button>
+                    </div>
                   </div>
 
                   <form onSubmit={handleAddRound} className="flex flex-col sm:flex-row gap-4 mb-10 bg-zinc-950 p-6 border-4 border-zinc-700 shadow-comic relative">

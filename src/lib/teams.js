@@ -403,3 +403,77 @@ export async function deleteAllTeams() {
     await batch.commit()
   }
 }
+
+export async function resetRoundScores(track) {
+  assertFirebaseEnabled()
+  const snap = await getDocs(collection(db, TEAMS_COLLECTION))
+  if (snap.empty) return
+
+  let batch = writeBatch(db)
+  let count = 0
+
+  for (const teamDoc of snap.docs) {
+    const data = teamDoc.data()
+    const teamTrack = String(data.track || 'software').toLowerCase()
+    
+    if (track && teamTrack !== track) continue
+
+    const newData = { ...data, scores: {}, scores_avg: {}, judgeStatus: {} }
+    newData.total = computeTotal(newData)
+
+    batch.update(teamDoc.ref, {
+      scores: {},
+      scores_avg: {},
+      judgeStatus: {},
+      total: newData.total,
+      updatedAt: serverTimestamp()
+    })
+    
+    count++
+    if (count >= 400) {
+      await batch.commit()
+      batch = writeBatch(db)
+      count = 0
+    }
+  }
+
+  if (count > 0) {
+    await batch.commit()
+  }
+}
+
+export async function resetBonusScores(track) {
+  assertFirebaseEnabled()
+  const snap = await getDocs(collection(db, TEAMS_COLLECTION))
+  if (snap.empty) return
+
+  let batch = writeBatch(db)
+  let count = 0
+
+  for (const teamDoc of snap.docs) {
+    const data = teamDoc.data()
+    const teamTrack = String(data.track || 'software').toLowerCase()
+    
+    if (track && teamTrack !== track) continue
+
+    const newData = { ...data, bonuses: {} }
+    newData.total = computeTotal(newData)
+
+    batch.update(teamDoc.ref, {
+      bonuses: {},
+      total: newData.total,
+      updatedAt: serverTimestamp()
+    })
+    
+    count++
+    if (count >= 400) {
+      await batch.commit()
+      batch = writeBatch(db)
+      count = 0
+    }
+  }
+
+  if (count > 0) {
+    await batch.commit()
+  }
+}

@@ -71,8 +71,7 @@ export async function removeJudge(judgeId) {
   // 2. Set isActive false (or delete)
   await deleteDoc(doc(db, JUDGES_COLLECTION, judgeId))
 
-  // 3. Recalculate ALL teams since the active judges reduced
-  await recalculateAllTeamsDueToJudgeChange(activeJudges)
+  // Removed recalculate logic since scoring is absolute now.
 }
 
 // 3. Edit Judge Name
@@ -96,7 +95,7 @@ export async function submitScoresBatch(teamId, roundScoresMap, judgeId) {
   const roundNames = Object.keys(roundScoresMap)
   if (!roundNames.length) return
 
-  // Get current active judges to verify state
+  // Get current state to verify judge activity and locks
   const globalsRef = doc(db, SETTINGS_COLLECTION, CONFIG_DOC)
   const globalsSnap = await getDoc(globalsRef)
   const data_globals = globalsSnap.exists() ? globalsSnap.data() : {}
@@ -120,106 +119,14 @@ export async function submitScoresBatch(teamId, roundScoresMap, judgeId) {
   }
 
   const scores = teamData.scores || {}
-  const scores_avg = teamData.scores_avg || {}
-  const judgeStatus = teamData.judgeStatus || {}
 
   for (const rname of roundNames) {
-    const scoreData = roundScoresMap[rname]
-
-    // Initialize structure
-    if (typeof scores[rname] !== 'object' || scores[rname] === null) {
-      scores[rname] = {}
-    }
-    if (!judgeStatus[rname]) {
-      judgeStatus[rname] = { submittedBy: [], isComplete: false }
-    }
-
-    // 1. Store score
-    scores[rname][judgeId] = scoreData
-
-    // 2. Add to submittedBy
-    if (!judgeStatus[rname].submittedBy.includes(judgeId)) {
-      judgeStatus[rname].submittedBy.push(judgeId)
-    }
-
-    // 3. Calc Average
-    const validSubmissions = judgeStatus[rname].submittedBy.filter(id => activeJudges.includes(id))
-    const isComplete = activeJudges.length > 0 && activeJudges.every(id => validSubmissions.includes(id))
-    judgeStatus[rname].isComplete = isComplete
-
-    if (isComplete) {
-      let sum = 0
-      for (const uid of activeJudges) {
-        const val = scores[rname][uid]
-        const num = (val !== null && typeof val === 'object') ? val.total : Number(val)
-        sum += (num || 0)
-      }
-      scores_avg[rname] = Math.round((sum / activeJudges.length) * 100) / 100
-    } else {
-      scores_avg[rname] = 0
-    }
+    // Score becomes absolute immediately.
+    scores[rname] = roundScoresMap[rname]
   }
 
   await updateDoc(teamRef, {
     scores,
-    scores_avg,
-    judgeStatus,
     updatedAt: serverTimestamp()
   })
-}
-
-// Private Method to Recalculate Averages on Judge Removal
-async function recalculateAllTeamsDueToJudgeChange(activeJudges) {
-  const snap = await getDocs(collection(db, TEAMS_COLLECTION))
-  let batch = writeBatch(db)
-  let count = 0
-
-  for (const teamDoc of snap.docs) {
-    const data = teamDoc.data()
-    const scores = data.scores || {}
-    let mutated = false
-
-    const scores_avg = data.scores_avg || {}
-    const judgeStatus = data.judgeStatus || {}
-
-    // Iterate through all rounds this team has
-    for (const roundName of Object.keys(judgeStatus)) {
-      const status = judgeStatus[roundName]
-      const validSubmissions = status.submittedBy.filter(id => activeJudges.includes(id))
-      
-      const isComplete = activeJudges.length > 0 && activeJudges.every(id => validSubmissions.includes(id))
-      status.isComplete = isComplete
-      
-      if (isComplete) {
-         let sum = 0
-         for (const uid of activeJudges) {
-            const val = scores[roundName] && scores[roundName][uid] ? scores[roundName][uid] : 0
-            const num = (val !== null && typeof val === 'object') ? val.total : Number(val)
-            sum += (num || 0)
-         }
-         scores_avg[roundName] = Math.round((sum / activeJudges.length) * 100) / 100
-      } else {
-         scores_avg[roundName] = 0
-      }
-      mutated = true
-    }
-
-    if (mutated) {
-      batch.update(teamDoc.ref, {
-        scores_avg,
-        judgeStatus,
-        updatedAt: serverTimestamp()
-      })
-      count++
-      if (count >= 400) { 
-         await batch.commit()
-         batch = writeBatch(db) // FIXED: Reinstantiate after commit
-         count = 0
-      }
-    }
-  }
-
-  if(count > 0) {
-    await batch.commit()
-  }
 }

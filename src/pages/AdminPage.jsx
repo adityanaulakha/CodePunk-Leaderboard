@@ -8,7 +8,7 @@ import AdminLogin from '../components/AdminLogin.jsx'
 import LeaderboardTable from '../components/LeaderboardTable.jsx'
 import useTeamsRealtime from '../hooks/useTeamsRealtime.js'
 import { auth, db, firebaseEnabled } from '../lib/firebase.js'
-import { addTeam, bulkImportTeams, deleteTeam, updateTeamScores, updateRoundNames, setLeaderboardFrozen, triggerCelebration, renameRound, updateTeamTrack, updateTeamBonuses, updateRubrics, updateBonusNames, renameBonus, toggleRoundLock } from '../lib/teams.js'
+import { addTeam, bulkImportTeams, deleteTeam, deleteAllTeams, resetBonusScores, resetRoundScores, updateTeamScores, updateRoundNames, setLeaderboardFrozen, triggerCelebration, renameRound, updateTeamTrack, updateTeamBonuses, updateRubrics, updateBonusNames, renameBonus, toggleRoundLock } from '../lib/teams.js'
 import { addJudge, removeJudge, submitScore, updateJudgeName } from '../lib/judges.js'
 
 const MotionDiv = motion.div
@@ -205,6 +205,42 @@ export default function AdminPage() {
     setToast({ type: 'success', message: 'Team deleted' })
   })
 
+  const handleDeleteAllTeams = wrapAsync(async () => {
+    const confirm1 = window.confirm("WARNING: Are you sure you want to delete ALL teams? This cannot be undone.")
+    if (!confirm1) return
+    const confirm2 = window.prompt("Type 'DELETE ALL' to confirm:")
+    if (confirm2 !== "DELETE ALL") {
+       setToast({ type: 'error', message: 'Mass deletion cancelled' })
+       return
+    }
+    await deleteAllTeams()
+    setToast({ type: 'success', message: 'All teams successfully deleted' })
+  })
+
+  const handleResetRoundScores = wrapAsync(async () => {
+    const confirm1 = window.confirm(`WARNING: Are you sure you want to completely clear ALL MAIN ROUND SCORES for the ${roundManageTrack.toUpperCase()} track? This cannot be undone.`)
+    if (!confirm1) return
+    const confirm2 = window.prompt("Type 'RESET SCORES' to confirm:")
+    if (confirm2 !== "RESET SCORES") {
+       setToast({ type: 'error', message: 'Score reset cancelled' })
+       return
+    }
+    await resetRoundScores(roundManageTrack)
+    setToast({ type: 'success', message: `${roundManageTrack.toUpperCase()} round scores successfully reset` })
+  })
+
+  const handleResetBonusScores = wrapAsync(async () => {
+    const confirm1 = window.confirm(`WARNING: Are you sure you want to completely clear ALL BONUS SCORES for the ${bonusManageTrack.toUpperCase()} track? This cannot be undone.`)
+    if (!confirm1) return
+    const confirm2 = window.prompt("Type 'RESET BONUSES' to confirm:")
+    if (confirm2 !== "RESET BONUSES") {
+       setToast({ type: 'error', message: 'Bonus reset cancelled' })
+       return
+    }
+    await resetBonusScores(bonusManageTrack)
+    setToast({ type: 'success', message: `${bonusManageTrack.toUpperCase()} bonus scores successfully reset` })
+  })
+
   const activeRoundNames = roundManageTrack === 'hardware' ? roundNamesHardware : roundNamesSoftware
 
   const handleAddRound = wrapAsync(async (e) => {
@@ -340,9 +376,10 @@ export default function AdminPage() {
             <div className="text-xs font-bold uppercase tracking-[0.3em] text-gwen-cyan">Organizer Dashboard</div>
             <h1 className="mt-2 font-hero text-5xl tracking-widest text-zinc-100 uppercase drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">Admin Panel</h1>
           </div>
-          <div className="flex gap-4">
-            <Link to="/" className="font-hero text-lg border-2 border-zinc-900 bg-gwen-pink px-5 py-2 uppercase tracking-widest text-zinc-900 shadow-comic hover:-translate-y-1 hover:-translate-x-1">Public Leaderboard</Link>
-            {user && <button onClick={() => signOut(auth)} className="font-hero text-lg border-2 border-zinc-900 bg-zinc-200 px-5 py-2 uppercase tracking-widest text-zinc-900 shadow-comic hover:-translate-y-1">Sign out</button>}
+          <div className="flex gap-4 items-center flex-wrap justify-end">
+            {canUseAdmin && <Link to="/podium" className="font-hero text-lg border-2 border-slate-700 bg-zinc-900 px-5 py-2 uppercase tracking-widest text-white shadow-[4px_4px_0_#FFF] hover:-translate-y-1 transition-all">🏆 Podium Mode</Link>}
+            <Link to="/" className="font-hero text-lg border-2 border-zinc-900 bg-gwen-pink px-5 py-2 uppercase tracking-widest text-zinc-900 shadow-comic hover:-translate-y-1 hover:-translate-x-1 transition-all">Public Leaderboard</Link>
+            {user && <button onClick={() => signOut(auth)} className="font-hero text-lg border-2 border-zinc-900 bg-zinc-200 px-5 py-2 uppercase tracking-widest text-zinc-900 shadow-comic hover:-translate-y-1 transition-all">Sign out</button>}
           </div>
         </div>
 
@@ -442,14 +479,24 @@ export default function AdminPage() {
                       <h2 className="font-hero text-5xl uppercase text-white drop-shadow-[3px_3px_0_#111]">Manage Bonus Types</h2>
                       <p className="text-spidey-blue font-bold tracking-widest uppercase text-sm mt-2">Configure extra score columns</p>
                     </div>
-                    <select 
-                      value={bonusManageTrack} 
-                      onChange={e => setBonusManageTrack(e.target.value)} 
-                      className="border-4 border-spidey-blue bg-zinc-950 px-6 py-3 font-hero text-2xl text-zinc-100 outline-none focus:border-white transition-colors cursor-pointer shadow-[4px_4px_0_#111]"
-                    >
-                      <option value="software">SOFTWARE BONUSES</option>
-                      <option value="hardware">HARDWARE BONUSES</option>
-                    </select>
+                    <div className="flex gap-4 items-center flex-wrap">
+                      <select 
+                        value={bonusManageTrack} 
+                        onChange={e => setBonusManageTrack(e.target.value)} 
+                        className="border-4 border-spidey-blue bg-zinc-950 px-6 py-3 font-hero text-2xl text-zinc-100 outline-none focus:border-white transition-colors cursor-pointer shadow-[4px_4px_0_#111]"
+                      >
+                        <option value="software">SOFTWARE BONUSES</option>
+                        <option value="hardware">HARDWARE BONUSES</option>
+                      </select>
+                      <button
+                        onClick={handleResetBonusScores}
+                        disabled={busy}
+                        className="font-hero text-xl px-4 py-3 bg-spidey-red text-white uppercase tracking-widest hover:bg-white hover:text-spidey-red border-2 border-spidey-red transition-colors shadow-comic-red"
+                        title={`Reset ${bonusManageTrack} Bonus Scores`}
+                      >
+                        RESET SCORES
+                      </button>
+                    </div>
                   </div>
 
                   <form onSubmit={handleAddBonus} className="flex flex-col sm:flex-row gap-4 max-w-4xl mx-auto bg-zinc-950 p-6 border-4 border-zinc-700 shadow-comic relative mb-8">
@@ -747,13 +794,25 @@ export default function AdminPage() {
                 <div className="border-4 border-zinc-800 bg-zinc-900/90 backdrop-blur-md p-6 lg:p-8 shadow-[8px_8px_0_#111]">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                     <h3 className="font-hero text-5xl uppercase text-white drop-shadow-[3px_3px_0_#111]">Team Roster</h3>
-                    <input
-                      type="text"
-                      placeholder="Search teams..."
-                      value={manageTeamSearchQuery}
-                      onChange={(e) => setManageTeamSearchQuery(e.target.value)}
-                      className="border-2 border-zinc-600 bg-zinc-950 px-4 py-3 text-zinc-100 outline-none focus:border-gwen-cyan transition-all w-full md:w-64 font-hero text-2xl placeholder:text-zinc-600 shadow-comic"
-                    />
+                    <div className="flex items-center gap-4 w-full md:w-auto">
+                      <input
+                        type="text"
+                        placeholder="Search teams..."
+                        value={manageTeamSearchQuery}
+                        onChange={(e) => setManageTeamSearchQuery(e.target.value)}
+                        className="border-2 border-zinc-600 bg-zinc-950 px-4 py-3 text-zinc-100 outline-none focus:border-gwen-cyan transition-all flex-1 md:w-64 font-hero text-2xl placeholder:text-zinc-600 shadow-comic"
+                      />
+                      {teams.length > 0 && (
+                        <button
+                          onClick={handleDeleteAllTeams}
+                          disabled={busy}
+                          className="font-hero text-xl px-4 py-3 bg-spidey-red text-white uppercase tracking-widest hover:bg-white hover:text-spidey-red border-2 border-spidey-red transition-colors shadow-comic-red"
+                          title="Delete all teams"
+                        >
+                          DELETE ALL
+                        </button>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -794,14 +853,24 @@ export default function AdminPage() {
                       <h2 className="font-hero text-5xl uppercase text-white drop-shadow-[3px_3px_0_#111]">Column Structure</h2>
                       <p className="text-2099-orange font-bold tracking-widest uppercase text-sm mt-2">Manage scoring factors</p>
                     </div>
-                    <select 
-                      value={roundManageTrack} 
-                      onChange={e => setRoundManageTrack(e.target.value)} 
-                      className="border-4 border-2099-orange bg-zinc-950 px-6 py-3 font-hero text-2xl text-zinc-100 outline-none focus:border-white transition-colors cursor-pointer shadow-[4px_4px_0_#111]"
-                    >
-                      <option value="software">SOFTWARE ROUNDS</option>
-                      <option value="hardware">HARDWARE ROUNDS</option>
-                    </select>
+                    <div className="flex gap-4 items-center flex-wrap">
+                      <select 
+                        value={roundManageTrack} 
+                        onChange={e => setRoundManageTrack(e.target.value)} 
+                        className="border-4 border-2099-orange bg-zinc-950 px-6 py-3 font-hero text-2xl text-zinc-100 outline-none focus:border-white transition-colors cursor-pointer shadow-[4px_4px_0_#111]"
+                      >
+                        <option value="software">SOFTWARE ROUNDS</option>
+                        <option value="hardware">HARDWARE ROUNDS</option>
+                      </select>
+                      <button
+                        onClick={handleResetRoundScores}
+                        disabled={busy}
+                        className="font-hero text-xl px-4 py-3 bg-spidey-red text-white uppercase tracking-widest hover:bg-white hover:text-spidey-red border-2 border-spidey-red transition-colors shadow-comic-red"
+                        title={`Reset ${roundManageTrack} Main Round Scores`}
+                      >
+                        RESET SCORES
+                      </button>
+                    </div>
                   </div>
 
                   <form onSubmit={handleAddRound} className="flex flex-col sm:flex-row gap-4 mb-10 bg-zinc-950 p-6 border-4 border-zinc-700 shadow-comic relative">
@@ -854,12 +923,7 @@ export default function AdminPage() {
 
                 // Build header row
                 const headers = ['Rank', 'Team Name']
-                for (const r of viewRounds) {
-                  for (const jid of judgeIds) {
-                    headers.push(`${r} - ${activeJudgeNames[jid] || jid.slice(0,6)}`)
-                  }
-                  headers.push(`${r} (Avg)`)
-                }
+                for (const r of viewRounds) headers.push(r)
                 for (const b of viewBonuses) headers.push(b)
                 headers.push('Total')
 
@@ -867,12 +931,12 @@ export default function AdminPage() {
                 const rows = viewTeams.map((t, idx) => {
                   const row = [idx + 1, `"${t.name}"`]
                   for (const r of viewRounds) {
-                    for (const jid of judgeIds) {
-                      const val = t.scores?.[r]?.[jid]
-                      if (val && typeof val === 'object') row.push(val.total ?? 0)
-                      else row.push(val ?? '')
+                    let val = t.scores?.[r]
+                    if (val && typeof val === 'object' && val.total === undefined) {
+                       const vals = Object.values(val)
+                       if (vals.length > 0) val = vals[0]
                     }
-                    row.push(t.scores_avg?.[r] || 0)
+                    row.push((val && typeof val === 'object') ? (val.total ?? 0) : (val ?? 0))
                   }
                   for (const b of viewBonuses) row.push(t.bonuses?.[b] || 0)
                   row.push(t.total)
@@ -897,7 +961,7 @@ export default function AdminPage() {
                   <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6 p-6 lg:p-8 border-b-4 border-zinc-800">
                     <div>
                       <h2 className="font-hero text-5xl uppercase text-white drop-shadow-[3px_3px_0_#111]">Score Viewer</h2>
-                      <p className="text-gwen-pink font-bold tracking-widest uppercase text-sm mt-2">Read-only backup · Click a team to expand judge breakdown</p>
+                      <p className="text-gwen-pink font-bold tracking-widest uppercase text-sm mt-2">Read-only backup view of all teams and direct scores</p>
                     </div>
                     <div className="flex gap-4 items-center">
                       <span className="text-zinc-500 font-bold text-xs uppercase tracking-widest">{viewTeams.length} Teams</span>
@@ -957,14 +1021,17 @@ export default function AdminPage() {
                                 </div>
                               </div>
 
-                              {/* Round Averages */}
+                              {/* Round Scores */}
                               {viewRounds.map(r => {
-                                const avg = t.scores_avg?.[r] || 0
-                                const status = t.judgeStatus?.[r] || {}
+                                let val = t.scores?.[r]
+                                if (val && typeof val === 'object' && val.total === undefined) {
+                                   const vals = Object.values(val)
+                                   if (vals.length > 0) val = vals[0]
+                                }
+                                const score = (val && typeof val === 'object') ? val.total : (val ?? 0)
                                 return (
                                   <div key={r} className="text-center">
-                                    <span className={`font-hero text-xl tabular-nums ${avg > 0 ? 'text-gwen-cyan' : 'text-zinc-600'}`}>{avg}</span>
-                                    {status.isComplete && <span className="block text-[9px] text-gwen-cyan/60 font-black tracking-widest">✓</span>}
+                                    <span className={`font-hero text-xl tabular-nums ${score > 0 ? 'text-gwen-cyan' : 'text-zinc-600'}`}>{score}</span>
                                   </div>
                                 )
                               })}
@@ -982,76 +1049,7 @@ export default function AdminPage() {
                               </div>
                             </div>
 
-                            {/* Expanded Judge Breakdown */}
-                            {isExpanded && (
-                              <div className="bg-zinc-950/80 border-b-4 border-gwen-pink/30 border-l-4 border-l-gwen-pink px-6 py-5">
-                                <div className="text-xs text-gwen-pink font-black uppercase tracking-[0.2em] mb-4">Per-Judge Breakdown — {t.name}</div>
-                                
-                                {viewRounds.length > 0 && (
-                                  <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${Math.min(viewRounds.length, 3)}, 1fr)` }}>
-                                    {viewRounds.map(r => {
-                                      const judgeScores = t.scores?.[r] || {}
-                                      const status = t.judgeStatus?.[r] || {}
-                                      const submitted = status.submittedBy || []
-                                      const avg = t.scores_avg?.[r] || 0
-                                      const rubricDef = rubrics?.[`${scoreViewTrack}_${r}`] || []
 
-                                      return (
-                                        <div key={r} className="border-2 border-zinc-800 bg-zinc-900/50 p-4">
-                                          <div className="flex justify-between items-center mb-3 pb-2 border-b border-zinc-800">
-                                            <span className="font-hero text-lg uppercase tracking-widest text-white">{r}</span>
-                                            <span className={`font-hero text-lg tabular-nums ${avg > 0 ? 'text-gwen-cyan' : 'text-zinc-600'}`}>AVG: {avg}</span>
-                                          </div>
-
-                                          {submitted.length === 0 ? (
-                                            <div className="text-zinc-600 text-xs font-bold uppercase tracking-widest py-2">No submissions yet</div>
-                                          ) : (
-                                            <div className="space-y-2">
-                                              {submitted.map(jid => {
-                                                const judge = judgesList.find(j => j.id === jid)
-                                                const jName = judge ? judge.name : jid.slice(0, 8)
-                                                const val = judgeScores[jid]
-                                                const isObj = val && typeof val === 'object'
-                                                const totalDisplay = isObj ? val.total : (val ?? '-')
-
-                                                return (
-                                                  <div key={jid} className="bg-zinc-950 border border-zinc-800 p-2">
-                                                    <div className="flex justify-between items-center">
-                                                      <span className="text-sm text-zinc-400 font-bold truncate max-w-[120px]">{jName}</span>
-                                                      <span className="font-hero text-lg text-white tabular-nums">{totalDisplay}</span>
-                                                    </div>
-                                                    {isObj && val.parameters && rubricDef.length > 0 && (
-                                                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
-                                                        {rubricDef.map(cr => (
-                                                          <span key={cr.id} className="text-[10px] text-zinc-500">
-                                                            {cr.label}: <span className="text-zinc-400 font-mono">{val.parameters?.[cr.id] ?? '-'}</span>/{cr.max}
-                                                          </span>
-                                                        ))}
-                                                      </div>
-                                                    )}
-                                                  </div>
-                                                )
-                                              })}
-                                            </div>
-                                          )}
-                                        </div>
-                                      )
-                                    })}
-                                  </div>
-                                )}
-
-                                {viewBonuses.length > 0 && (
-                                  <div className="mt-4 flex flex-wrap gap-3">
-                                    {viewBonuses.map(b => (
-                                      <div key={b} className="border border-zinc-800 bg-zinc-900/50 px-4 py-2 flex gap-3 items-center">
-                                        <span className="text-xs text-zinc-500 font-bold uppercase tracking-widest">{b}</span>
-                                        <span className="font-hero text-lg text-zinc-300 tabular-nums">{t.bonuses?.[b] || 0}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            )}
                           </div>
                         )
                       })}

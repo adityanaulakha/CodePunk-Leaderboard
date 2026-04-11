@@ -186,10 +186,7 @@ export default function JudgePage() {
                 .filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()))
                 .filter(t => {
                   if (evaluationFilter === 'all') return true;
-                  const isCompleted = displayedRounds.length > 0 && displayedRounds.every(rname => {
-                     const status = t.judgeStatus?.[rname] || {}
-                     return status.submittedBy?.includes(uid)
-                  });
+                  const isCompleted = displayedRounds.length > 0 && displayedRounds.every(rname => t.scores?.[rname] !== undefined);
                   if (evaluationFilter === 'completed') return isCompleted;
                   if (evaluationFilter === 'pending') return !isCompleted;
                   return true;
@@ -202,13 +199,16 @@ export default function JudgePage() {
                     </div>
                     <div className="p-0">
                        {displayedRounds.map(rname => {
-                         const savedScoreObj = t.scores?.[rname]?.[uid]
+                         let savedScoreObj = t.scores?.[rname]
+                         if (savedScoreObj && typeof savedScoreObj === 'object' && savedScoreObj.total === undefined) {
+                            const vals = Object.values(savedScoreObj)
+                            if (vals.length > 0) savedScoreObj = vals[0]
+                         }
                          const isLegacyNumber = typeof savedScoreObj === 'number'
                          const parametersObj = isLegacyNumber ? {} : (savedScoreObj?.parameters || {})
                          const savedTotal = isLegacyNumber ? savedScoreObj : (savedScoreObj?.total ?? '')
                          
-                         const status = t.judgeStatus?.[rname] || {}
-                         const isSubmittedByMe = status.submittedBy?.includes(uid)
+                         const isEvaluated = savedScoreObj !== undefined
                          const isBusy = busyMap.get(t.id)
 
                          const currentRubricDef = rubrics?.[`${trackFilter}_${rname}`] || []
@@ -224,7 +224,7 @@ export default function JudgePage() {
                                        LOCKED
                                      </span>
                                   )}
-                                  {isSubmittedByMe && <span className="text-gwen-cyan text-xs font-black tracking-widest uppercase border border-gwen-cyan px-2 py-1 bg-gwen-cyan/10">SUBMITTED</span>}
+                                  {isEvaluated && <span className="text-gwen-cyan text-xs font-black tracking-widest uppercase border border-gwen-cyan px-2 py-1 bg-gwen-cyan/10">EVALUATED</span>}
                                 </div>
                               </div>
                               
@@ -251,7 +251,7 @@ export default function JudgePage() {
                                           className={`w-full border-b-4 bg-zinc-900 p-2 font-hero text-2xl text-center outline-none transition-colors 
                                              ${lockedRounds.includes(`${trackFilter}_${rname}`) 
                                                 ? 'border-zinc-800 text-zinc-600 cursor-not-allowed opacity-50' 
-                                                : isSubmittedByMe ? 'border-gwen-cyan text-zinc-100' : 'border-zinc-700 text-spidey-blue hover:bg-zinc-800 focus:border-spidey-blue'}`} 
+                                                : isEvaluated ? 'border-gwen-cyan text-zinc-100' : 'border-zinc-700 text-spidey-blue hover:bg-zinc-800 focus:border-spidey-blue'}`} 
                                         />
                                       </div>
                                     )
@@ -269,7 +269,7 @@ export default function JudgePage() {
                                       className={`w-full border-b-4 bg-zinc-900 p-2 font-hero text-2xl text-center outline-none transition-colors 
                                          ${lockedRounds.includes(`${trackFilter}_${rname}`) 
                                             ? 'border-zinc-800 text-zinc-600 cursor-not-allowed opacity-50' 
-                                            : isSubmittedByMe ? 'border-gwen-cyan text-zinc-100' : 'border-zinc-700 text-spidey-blue hover:bg-zinc-800 focus:border-spidey-blue'}`} 
+                                            : isEvaluated ? 'border-gwen-cyan text-zinc-100' : 'border-zinc-700 text-spidey-blue hover:bg-zinc-800 focus:border-spidey-blue'}`} 
                                     />
                                   </div>
                                 </div>
@@ -278,11 +278,7 @@ export default function JudgePage() {
                          )
                        })}
                     </div>
-                    {t.judgeStatus && activeRoundNames.some(r => t.judgeStatus[r]?.isComplete) && (
-                      <div className="p-2 bg-gwen-pink/10 border-t-2 border-gwen-pink flex justify-center text-xs font-bold text-gwen-pink uppercase tracking-widest">
-                        ROUND COMPLETIONS DETECTED BY STAGE
-                      </div>
-                    )}
+
                     <div className="p-4 bg-zinc-900 border-t-2 border-zinc-800">
                       <button 
                         disabled={busyMap.get(t.id)} 

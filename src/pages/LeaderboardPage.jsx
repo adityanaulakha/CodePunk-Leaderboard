@@ -50,38 +50,41 @@ export default function LeaderboardPage() {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="mx-auto max-w-6xl px-4 py-10 relative z-10"
+        className="mx-auto max-w-6xl px-3 sm:px-4 py-6 sm:py-10 relative z-10"
       >
-        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-12">
+        {/* Header */}
+        <div className="flex flex-col gap-4 sm:gap-6 mb-8 sm:mb-12">
           <div className="relative">
             {/* Themed decorative accent */}
-            <div className="absolute -left-4 top-0 w-1 h-full bg-spidey-red shadow-comic-red"></div>
+            <div className="absolute -left-3 sm:-left-4 top-0 w-1 h-full bg-spidey-red shadow-comic-red"></div>
             
-            <div className="text-sm font-bold uppercase tracking-[0.4em] text-gwen-cyan mb-2">
+            <div className="text-xs sm:text-sm font-bold uppercase tracking-[0.3em] sm:tracking-[0.4em] text-gwen-cyan mb-1 sm:mb-2">
               Droid Club
             </div>
             <h1 
               data-text="CODEPUNK V2.0 LEADERBOARD"
-              className="font-hero text-5xl md:text-7xl font-bold tracking-wider text-white text-glitch uppercase drop-shadow-[4px_4px_0_rgba(0,0,0,1)]"
+              className="font-hero text-3xl sm:text-5xl md:text-7xl font-bold tracking-wider text-white text-glitch uppercase drop-shadow-[4px_4px_0_rgba(0,0,0,1)]"
             >
               CodePunk v2.0 Leaderboard
             </h1>
-            <p className="mt-3 max-w-2xl text-base font-medium text-zinc-300 bg-zinc-950/80 inline-block px-3 py-1 border-l-2 border-gwen-pink backdrop-blur-sm shadow-comic">
+            <p className="mt-2 sm:mt-3 max-w-2xl text-xs sm:text-base font-medium text-zinc-300 bg-zinc-950/80 inline-block px-2 sm:px-3 py-1 border-l-2 border-gwen-pink backdrop-blur-sm shadow-comic">
               Scores update in real time. Rankings auto-sort by total marks.
             </p>
           </div>
 
-          <div className="flex items-center justify-between gap-4 md:justify-end">
+          {/* Controls row */}
+          <div className="flex items-center flex-wrap gap-3 sm:gap-4">
             <LiveIndicator lastUpdateAt={lastUpdateAt} />
+            <div className="flex-1"></div>
             <Link
               to="/judge"
-              className="font-hero text-xl rounded-none border-2 border-zinc-900 bg-spidey-blue hover:bg-gwen-pink px-6 py-2 uppercase tracking-widest text-zinc-900 transition-all shadow-comic hover:-translate-y-1 hover:-translate-x-1 hover:shadow-comic-cyan"
+              className="font-hero text-sm sm:text-xl rounded-none border-2 border-zinc-900 bg-spidey-blue hover:bg-gwen-pink px-3 sm:px-6 py-1.5 sm:py-2 uppercase tracking-widest text-zinc-900 transition-all shadow-comic hover:-translate-y-1 hover:-translate-x-1 hover:shadow-comic-cyan"
             >
               Judge Portal
             </Link>
             <Link
               to="/admin"
-              className="font-hero text-xl rounded-none border-2 border-zinc-900 bg-gwen-cyan hover:bg-gwen-pink px-6 py-2 uppercase tracking-widest text-zinc-900 transition-all shadow-comic hover:-translate-y-1 hover:-translate-x-1 hover:shadow-comic-cyan"
+              className="font-hero text-sm sm:text-xl rounded-none border-2 border-zinc-900 bg-gwen-cyan hover:bg-gwen-pink px-3 sm:px-6 py-1.5 sm:py-2 uppercase tracking-widest text-zinc-900 transition-all shadow-comic hover:-translate-y-1 hover:-translate-x-1 hover:shadow-comic-cyan"
             >
               Admin Portal
             </Link>
@@ -89,35 +92,36 @@ export default function LeaderboardPage() {
         </div>
 
         {!firebaseEnabled ? (
-          <div className="mt-8 relative overflow-hidden rounded-none border-4 border-spidey-blue bg-zinc-900 p-6 text-base font-bold text-white shadow-comic-cyan">
+          <div className="mt-4 sm:mt-8 relative overflow-hidden rounded-none border-4 border-spidey-blue bg-zinc-900 p-4 sm:p-6 text-sm sm:text-base font-bold text-white shadow-comic-cyan">
             <div className="absolute top-0 right-0 w-16 h-16 bg-spidey-red rotate-45 translate-x-8 -translate-y-8"></div>
             WARNING: Firebase is not configured! Add your `VITE_FIREBASE_*` env vars, then restart.
           </div>
         ) : null}
 
-        <div className="flex gap-4 justify-center mt-6">
+        {/* Track Tabs */}
+        <div className="flex gap-2 sm:gap-4 justify-center mt-4 sm:mt-6">
           <button 
             onClick={() => setActiveTrack('software')} 
-            className={`px-8 py-3 font-hero text-3xl border-4 transition-all uppercase tracking-widest ${activeTrack==='software' ? 'bg-gwen-cyan text-zinc-900 border-gwen-cyan scale-105 shadow-comic-cyan z-10' : 'bg-transparent text-zinc-400 border-zinc-700 shadow-comic hover:border-zinc-500'}`}
+            className={`px-4 sm:px-8 py-2 sm:py-3 font-hero text-xl sm:text-3xl border-4 transition-all uppercase tracking-widest ${activeTrack==='software' ? 'bg-gwen-cyan text-zinc-900 border-gwen-cyan scale-105 shadow-comic-cyan z-10' : 'bg-transparent text-zinc-400 border-zinc-700 shadow-comic hover:border-zinc-500'}`}
           >
             SOFTWARE
           </button>
           <button 
             onClick={() => setActiveTrack('hardware')} 
-            className={`px-8 py-3 font-hero text-3xl border-4 transition-all uppercase tracking-widest ${activeTrack==='hardware' ? 'bg-2099-orange text-zinc-900 border-2099-orange scale-105 shadow-comic z-10' : 'bg-transparent text-zinc-400 border-zinc-700 shadow-comic hover:border-zinc-500'}`}
+            className={`px-4 sm:px-8 py-2 sm:py-3 font-hero text-xl sm:text-3xl border-4 transition-all uppercase tracking-widest ${activeTrack==='hardware' ? 'bg-2099-orange text-zinc-900 border-2099-orange scale-105 shadow-comic z-10' : 'bg-transparent text-zinc-400 border-zinc-700 shadow-comic hover:border-zinc-500'}`}
           >
             HARDWARE
           </button>
         </div>
 
-        <div className="mt-8 relative">
+        <div className="mt-6 sm:mt-8 relative">
           {isFrozen && (
-            <div className="absolute inset-0 z-50 backdrop-blur-xl bg-zinc-950/60 flex items-center justify-center p-8 border-4 border-gwen-pink shadow-comic-pink">
+            <div className="absolute inset-0 z-50 backdrop-blur-xl bg-zinc-950/60 flex items-center justify-center p-4 sm:p-8 border-4 border-gwen-pink shadow-comic-pink">
               <div className="text-center">
-                <h2 className="font-hero text-6xl md:text-8xl text-white tracking-widest text-glitch uppercase drop-shadow-[4px_4px_0_rgba(0,0,0,1)]">
+                <h2 className="font-hero text-4xl sm:text-6xl md:text-8xl text-white tracking-widest text-glitch uppercase drop-shadow-[4px_4px_0_rgba(0,0,0,1)]">
                   Final Results Pending
                 </h2>
-                <div className="mt-4 inline-block bg-spidey-blue text-white px-6 py-3 font-hero text-3xl tracking-widest shadow-[4px_4px_0_#111] animate-pulse">
+                <div className="mt-4 inline-block bg-spidey-blue text-white px-4 sm:px-6 py-2 sm:py-3 font-hero text-xl sm:text-3xl tracking-widest shadow-[4px_4px_0_#111] animate-pulse">
                   Stand by for the ultimate reveal...
                 </div>
               </div>
@@ -144,7 +148,7 @@ export default function LeaderboardPage() {
           </div>
         </div>
 
-        <div className="mt-10 inline-block font-hero text-xl bg-zinc-900 border-2 border-zinc-800 text-gwen-cyan px-4 py-2 shadow-comic skew-x-[-2deg]">
+        <div className="mt-6 sm:mt-10 inline-block font-hero text-sm sm:text-xl bg-zinc-900 border-2 border-zinc-800 text-gwen-cyan px-3 sm:px-4 py-2 shadow-comic skew-x-[-2deg]">
           Total = {[
             ...(activeTrack === 'hardware' ? roundNamesHardware : roundNamesSoftware),
             ...(activeTrack === 'hardware' ? bonusNamesHardware : bonusNamesSoftware)

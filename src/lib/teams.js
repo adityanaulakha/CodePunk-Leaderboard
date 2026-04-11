@@ -19,9 +19,15 @@ export const CONFIG_DOC = 'globals'
 export function computeTotal(teamData) {
   let total = 0
   
-  const avg = teamData.scores_avg || {}
-  for (const v of Object.values(avg)) {
-    const num = Number(v)
+  const scores = teamData.scores || {}
+  for (const rawV of Object.values(scores)) {
+    let v = rawV
+    if (v && typeof v === 'object' && v.total === undefined) {
+       const vals = Object.values(v)
+       if (vals.length > 0) v = vals[0]
+    }
+    // Score can be a simple number or an object from the rubric like { total: x, criteria: {} }
+    const num = (v && typeof v === 'object') ? Number(v.total) : Number(v)
     if (Number.isFinite(num)) total += num
   }
   
@@ -49,8 +55,6 @@ export function normalizeTeamDoc(docSnap) {
     name: String(data.name ?? ''),
     track: String(data.track ?? 'software').toLowerCase(),
     scores: data.scores || {},
-    scores_avg: data.scores_avg || {},
-    judgeStatus: data.judgeStatus || {},
     bonuses,
     createdAt: data.createdAt ?? null,
     updatedAt: data.updatedAt ?? null,
@@ -256,10 +260,8 @@ export async function updateRoundNames(track, roundsArray) {
       await setDoc(globalsRef, { rubrics, updatedAt: serverTimestamp() }, { merge: true })
     }
 
-    // 2. Purge scores, scores_avg, and judgeStatus
+    // 2. Purge scores
     await purgeTeamsData(track, 'scores', removed)
-    await purgeTeamsData(track, 'scores_avg', removed)
-    await purgeTeamsData(track, 'judgeStatus', removed)
   }
 }
 
@@ -323,22 +325,6 @@ export async function renameRound(track, oldName, newName, currentRounds) {
       updates.scores = scores
     }
 
-    // Rename in averages
-    if (data.scores_avg && data.scores_avg[oldName] !== undefined) {
-      const avg = { ...data.scores_avg }
-      avg[newName] = avg[oldName]
-      delete avg[oldName]
-      updates.scores_avg = avg
-    }
-
-    // Rename in judgeStatus
-    if (data.judgeStatus && data.judgeStatus[oldName] !== undefined) {
-      const status = { ...data.judgeStatus }
-      status[newName] = status[oldName]
-      delete status[oldName]
-      updates.judgeStatus = status
-    }
-
     if (Object.keys(updates).length > 0) {
       await updateDoc(teamDoc.ref, { ...updates, updatedAt: serverTimestamp() })
     }
@@ -378,4 +364,100 @@ export async function renameBonus(track, oldName, newName, currentBonuses) {
   }
 
   await batchCommit.commit()
+}
+
+// Delete ALL
+export async function deleteAllTeams() {
+  assertFirebaseEnabled()
+  const snap = await getDocs(collection(db, TEAMS_COLLECTION))
+  if (snap.empty) return
+
+  let batch = writeBatch(db)
+  let count = 0
+
+  for (const teamDoc of snap.docs) {
+    batch.delete(teamDoc.ref)
+    count++
+    if (count >= 400) {
+      await batch.commit()
+      batch = writeBatch(db)
+      count = 0
+    }
+  }
+
+  if (count > 0) {
+    await batch.commit()
+  }
+}
+
+export async function resetRoundScores(track) {
+  assertFirebaseEnabled()
+  const snap = await getDocs(collection(db, TEAMS_COLLECTION))
+  if (snap.empty) return
+
+  let batch = writeBatch(db)
+  let count = 0
+
+  for (const teamDoc of snap.docs) {
+    const data = teamDoc.data()
+    const teamTrack = String(data.track || 'software').toLowerCase()
+    
+    if (track && teamTrack !== track) continue
+
+    const newData = { ...data, scores: {} }
+    newData.total = computeTotal(newData)
+
+    batch.update(teamDoc.ref, {
+      scores: {},
+      total: newData.total,
+      updatedAt: serverTimestamp()
+    })
+    
+    count++
+    if (count >= 400) {
+      await batch.commit()
+      batch = writeBatch(db)
+      count = 0
+    }
+  }
+
+  if (count > 0) {
+    await batch.commit()
+  }
+}
+
+export async function resetBonusScores(track) {
+  assertFirebaseEnabled()
+  const snap = await getDocs(collection(db, TEAMS_COLLECTION))
+  if (snap.empty) return
+
+  let batch = writeBatch(db)
+  let count = 0
+
+  for (const teamDoc of snap.docs) {
+    const data = teamDoc.data()
+    const teamTrack = String(data.track || 'software').toLowerCase()
+    
+    if (track && teamTrack !== track) continue
+
+    const newData = { ...data, bonuses: {} }
+    newData.total = computeTotal(newData)
+
+    batch.update(teamDoc.ref, {
+      bonuses: {},
+      total: newData.total,
+      updatedAt: serverTimestamp()
+    })
+    
+    count++
+    if (count >= 400) {
+      await batch.commit()
+      batch = writeBatch(db)
+      count = 0
+    }
+  }
+
+  if (count > 0) {
+    await batch.commit()
+  }
 }

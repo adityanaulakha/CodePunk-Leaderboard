@@ -14,11 +14,13 @@ function sortTeams(a, b) {
 
 function scoresChanged(prev, next) {
   if (!prev) return true
-  const prevScores = prev.scores_avg || {}
-  const nextScores = next.scores_avg || {}
+  const prevScores = prev.scores || {}
+  const nextScores = next.scores || {}
   let keys = new Set([...Object.keys(prevScores), ...Object.keys(nextScores)])
   for (const k of keys) {
-    if (prevScores[k] !== nextScores[k]) return true
+    const prevVal = prevScores[k] && typeof prevScores[k] === 'object' ? prevScores[k].total : prevScores[k]
+    const nextVal = nextScores[k] && typeof nextScores[k] === 'object' ? nextScores[k].total : nextScores[k]
+    if (prevVal !== nextVal) return true
   }
   
   const prevBonus = prev.bonuses || {}

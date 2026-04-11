@@ -9,6 +9,13 @@ function MedalEmoji({ rank }) {
   return null
 }
 
+function getOrdinalRank(rank) {
+  if (rank === 1) return '1st'
+  if (rank === 2) return '2nd'
+  if (rank === 3) return '3rd'
+  return `${rank}th`
+}
+
 function rowBg(rank) {
   if (rank === 1) return 'bg-gradient-to-r from-spidey-red to-spidey-red/90 border-spidey-red text-zinc-950'
   if (rank === 2) return 'bg-gradient-to-r from-gwen-cyan to-gwen-cyan/90 border-gwen-cyan text-zinc-900'
@@ -110,7 +117,7 @@ export default function LeaderboardTable({ teams, roundNames = [], bonusNames = 
                           transition={{ type: 'spring', stiffness: 300 }}
                           className="tabular-nums inline-block"
                         >
-                          #{rank}
+                          {getOrdinalRank(rank)}
                         </motion.span>
                         <MedalEmoji rank={rank} />
                       </div>
@@ -121,18 +128,26 @@ export default function LeaderboardTable({ teams, roundNames = [], bonusNames = 
                         </div>
                       </div>
 
-                      {roundNames.map((r, i) => (
-                        <div key={i} className={`text-right font-hero text-2xl lg:text-3xl tabular-nums ${textTone(rank)}`}>
-                          <motion.span
-                            key={"R_" + (team.scores_avg?.[r] || 0)}
-                            initial={{ scale: 1.5, color: '#FF00A0' }}
-                            animate={{ scale: 1, color: '' }}
-                            className="inline-block"
-                          >
-                            {team.scores_avg?.[r] || 0}
-                          </motion.span>
-                        </div>
-                      ))}
+                      {roundNames.map((r, i) => {
+                        let val = team.scores?.[r]
+                        if (val && typeof val === 'object' && val.total === undefined) {
+                           const vals = Object.values(val)
+                           if (vals.length > 0) val = vals[0]
+                        }
+                        const score = (val && typeof val === 'object') ? (val.total ?? 0) : (val ?? 0)
+                        return (
+                          <div key={i} className={`text-right font-hero text-2xl lg:text-3xl tabular-nums ${textTone(rank)}`}>
+                            <motion.span
+                              key={"R_" + score}
+                              initial={{ scale: 1.5, color: '#FF00A0' }}
+                              animate={{ scale: 1, color: '' }}
+                              className="inline-block"
+                            >
+                              {score}
+                            </motion.span>
+                          </div>
+                        )
+                      })}
 
                       {bonusNames.map((b, i) => (
                         <div key={`db_${i}`} className={`text-right font-hero text-2xl lg:text-3xl tabular-nums ${textTone(rank)}`}>
@@ -196,7 +211,7 @@ export default function LeaderboardTable({ teams, roundNames = [], bonusNames = 
                 <div className="flex items-center px-3 py-2.5 gap-2.5">
                   {/* Rank + Trophy */}
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    <span className={`font-hero text-2xl tabular-nums ${textTone(rank)}`}>#{rank}</span>
+                    <span className={`font-hero text-2xl tabular-nums ${textTone(rank)}`}>{getOrdinalRank(rank)}</span>
                     <MedalEmoji rank={rank} />
                   </div>
 
@@ -223,19 +238,27 @@ export default function LeaderboardTable({ teams, roundNames = [], bonusNames = 
                 {/* Scores Row - inline chips */}
                 {(roundNames.length > 0 || bonusNames.length > 0) && (
                   <div className={`flex flex-wrap gap-1.5 px-3 pb-2.5 ${isTop3 ? '' : ''}`}>
-                    {roundNames.map((r, i) => (
-                      <div key={i} className={`${chipBg(rank)} px-2 py-0.5 flex items-center gap-1.5 rounded-sm`}>
-                        <span className={`text-[9px] font-bold uppercase tracking-wider ${labelTone(rank)}`}>{r}</span>
-                        <motion.span
-                          key={"R_" + (team.scores_avg?.[r] || 0)}
-                          initial={{ scale: 1.2, color: '#FF00A0' }}
-                          animate={{ scale: 1, color: '' }}
-                          className={`font-hero text-sm tabular-nums inline-block ${textTone(rank)}`}
-                        >
-                          {team.scores_avg?.[r] || 0}
-                        </motion.span>
-                      </div>
-                    ))}
+                    {roundNames.map((r, i) => {
+                      let val = team.scores?.[r]
+                      if (val && typeof val === 'object' && val.total === undefined) {
+                         const vals = Object.values(val)
+                         if (vals.length > 0) val = vals[0]
+                      }
+                      const score = (val && typeof val === 'object') ? (val.total ?? 0) : (val ?? 0)
+                      return (
+                        <div key={i} className={`${chipBg(rank)} px-2 py-0.5 flex items-center gap-1.5 rounded-sm`}>
+                          <span className={`text-[9px] font-bold uppercase tracking-wider ${labelTone(rank)}`}>{r}</span>
+                          <motion.span
+                            key={"R_" + score}
+                            initial={{ scale: 1.2, color: '#FF00A0' }}
+                            animate={{ scale: 1, color: '' }}
+                            className={`font-hero text-sm tabular-nums inline-block ${textTone(rank)}`}
+                          >
+                            {score}
+                          </motion.span>
+                        </div>
+                      )
+                    })}
                     {bonusNames.map((b, i) => (
                       <div key={`mb_${i}`} className={`${chipBg(rank)} px-2 py-0.5 flex items-center gap-1.5 rounded-sm`}>
                         <span className={`text-[9px] font-bold uppercase tracking-wider ${labelTone(rank)}`}>{b}</span>

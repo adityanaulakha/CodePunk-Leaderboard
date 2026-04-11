@@ -923,12 +923,7 @@ export default function AdminPage() {
 
                 // Build header row
                 const headers = ['Rank', 'Team Name']
-                for (const r of viewRounds) {
-                  for (const jid of judgeIds) {
-                    headers.push(`${r} - ${activeJudgeNames[jid] || jid.slice(0,6)}`)
-                  }
-                  headers.push(`${r} (Avg)`)
-                }
+                for (const r of viewRounds) headers.push(r)
                 for (const b of viewBonuses) headers.push(b)
                 headers.push('Total')
 
@@ -936,12 +931,12 @@ export default function AdminPage() {
                 const rows = viewTeams.map((t, idx) => {
                   const row = [idx + 1, `"${t.name}"`]
                   for (const r of viewRounds) {
-                    for (const jid of judgeIds) {
-                      const val = t.scores?.[r]?.[jid]
-                      if (val && typeof val === 'object') row.push(val.total ?? 0)
-                      else row.push(val ?? '')
+                    let val = t.scores?.[r]
+                    if (val && typeof val === 'object' && val.total === undefined) {
+                       const vals = Object.values(val)
+                       if (vals.length > 0) val = vals[0]
                     }
-                    row.push(t.scores_avg?.[r] || 0)
+                    row.push((val && typeof val === 'object') ? (val.total ?? 0) : (val ?? 0))
                   }
                   for (const b of viewBonuses) row.push(t.bonuses?.[b] || 0)
                   row.push(t.total)
@@ -966,7 +961,7 @@ export default function AdminPage() {
                   <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6 p-6 lg:p-8 border-b-4 border-zinc-800">
                     <div>
                       <h2 className="font-hero text-5xl uppercase text-white drop-shadow-[3px_3px_0_#111]">Score Viewer</h2>
-                      <p className="text-gwen-pink font-bold tracking-widest uppercase text-sm mt-2">Read-only backup · Click a team to expand judge breakdown</p>
+                      <p className="text-gwen-pink font-bold tracking-widest uppercase text-sm mt-2">Read-only backup view of all teams and direct scores</p>
                     </div>
                     <div className="flex gap-4 items-center">
                       <span className="text-zinc-500 font-bold text-xs uppercase tracking-widest">{viewTeams.length} Teams</span>
@@ -1026,14 +1021,17 @@ export default function AdminPage() {
                                 </div>
                               </div>
 
-                              {/* Round Averages */}
+                              {/* Round Scores */}
                               {viewRounds.map(r => {
-                                const avg = t.scores_avg?.[r] || 0
-                                const status = t.judgeStatus?.[r] || {}
+                                let val = t.scores?.[r]
+                                if (val && typeof val === 'object' && val.total === undefined) {
+                                   const vals = Object.values(val)
+                                   if (vals.length > 0) val = vals[0]
+                                }
+                                const score = (val && typeof val === 'object') ? val.total : (val ?? 0)
                                 return (
                                   <div key={r} className="text-center">
-                                    <span className={`font-hero text-xl tabular-nums ${avg > 0 ? 'text-gwen-cyan' : 'text-zinc-600'}`}>{avg}</span>
-                                    {status.isComplete && <span className="block text-[9px] text-gwen-cyan/60 font-black tracking-widest">✓</span>}
+                                    <span className={`font-hero text-xl tabular-nums ${score > 0 ? 'text-gwen-cyan' : 'text-zinc-600'}`}>{score}</span>
                                   </div>
                                 )
                               })}
@@ -1051,76 +1049,7 @@ export default function AdminPage() {
                               </div>
                             </div>
 
-                            {/* Expanded Judge Breakdown */}
-                            {isExpanded && (
-                              <div className="bg-zinc-950/80 border-b-4 border-gwen-pink/30 border-l-4 border-l-gwen-pink px-6 py-5">
-                                <div className="text-xs text-gwen-pink font-black uppercase tracking-[0.2em] mb-4">Per-Judge Breakdown — {t.name}</div>
-                                
-                                {viewRounds.length > 0 && (
-                                  <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${Math.min(viewRounds.length, 3)}, 1fr)` }}>
-                                    {viewRounds.map(r => {
-                                      const judgeScores = t.scores?.[r] || {}
-                                      const status = t.judgeStatus?.[r] || {}
-                                      const submitted = status.submittedBy || []
-                                      const avg = t.scores_avg?.[r] || 0
-                                      const rubricDef = rubrics?.[`${scoreViewTrack}_${r}`] || []
 
-                                      return (
-                                        <div key={r} className="border-2 border-zinc-800 bg-zinc-900/50 p-4">
-                                          <div className="flex justify-between items-center mb-3 pb-2 border-b border-zinc-800">
-                                            <span className="font-hero text-lg uppercase tracking-widest text-white">{r}</span>
-                                            <span className={`font-hero text-lg tabular-nums ${avg > 0 ? 'text-gwen-cyan' : 'text-zinc-600'}`}>AVG: {avg}</span>
-                                          </div>
-
-                                          {submitted.length === 0 ? (
-                                            <div className="text-zinc-600 text-xs font-bold uppercase tracking-widest py-2">No submissions yet</div>
-                                          ) : (
-                                            <div className="space-y-2">
-                                              {submitted.map(jid => {
-                                                const judge = judgesList.find(j => j.id === jid)
-                                                const jName = judge ? judge.name : jid.slice(0, 8)
-                                                const val = judgeScores[jid]
-                                                const isObj = val && typeof val === 'object'
-                                                const totalDisplay = isObj ? val.total : (val ?? '-')
-
-                                                return (
-                                                  <div key={jid} className="bg-zinc-950 border border-zinc-800 p-2">
-                                                    <div className="flex justify-between items-center">
-                                                      <span className="text-sm text-zinc-400 font-bold truncate max-w-[120px]">{jName}</span>
-                                                      <span className="font-hero text-lg text-white tabular-nums">{totalDisplay}</span>
-                                                    </div>
-                                                    {isObj && val.parameters && rubricDef.length > 0 && (
-                                                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
-                                                        {rubricDef.map(cr => (
-                                                          <span key={cr.id} className="text-[10px] text-zinc-500">
-                                                            {cr.label}: <span className="text-zinc-400 font-mono">{val.parameters?.[cr.id] ?? '-'}</span>/{cr.max}
-                                                          </span>
-                                                        ))}
-                                                      </div>
-                                                    )}
-                                                  </div>
-                                                )
-                                              })}
-                                            </div>
-                                          )}
-                                        </div>
-                                      )
-                                    })}
-                                  </div>
-                                )}
-
-                                {viewBonuses.length > 0 && (
-                                  <div className="mt-4 flex flex-wrap gap-3">
-                                    {viewBonuses.map(b => (
-                                      <div key={b} className="border border-zinc-800 bg-zinc-900/50 px-4 py-2 flex gap-3 items-center">
-                                        <span className="text-xs text-zinc-500 font-bold uppercase tracking-widest">{b}</span>
-                                        <span className="font-hero text-lg text-zinc-300 tabular-nums">{t.bonuses?.[b] || 0}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            )}
                           </div>
                         )
                       })}

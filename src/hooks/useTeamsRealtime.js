@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { collection, doc, onSnapshot, query } from 'firebase/firestore'
 import { db, firebaseEnabled } from '../lib/firebase.js'
-import { normalizeTeamDoc, TEAMS_COLLECTION, SETTINGS_COLLECTION, CONFIG_DOC } from '../lib/teams.js'
+import { normalizeTeamDoc, CONFIG_DOC } from '../lib/teams.js'
 
 function sortTeams(a, b) {
   if (b.total !== a.total) return b.total - a.total
@@ -33,12 +33,11 @@ function scoresChanged(prev, next) {
   return false
 }
 
-export default function useTeamsRealtime() {
+export default function useTeamsRealtime(hackathonId) {
   const [teams, setTeams] = useState([])
-  const [roundNamesSoftware, setRoundNamesSoftware] = useState(['Round 1', 'Round 2', 'Final'])
-  const [roundNamesHardware, setRoundNamesHardware] = useState(['Round 1', 'Round 2', 'Final'])
-  const [bonusNamesSoftware, setBonusNamesSoftware] = useState(['HackerRank', 'Riddle Bonus'])
-  const [bonusNamesHardware, setBonusNamesHardware] = useState([])
+  const [tracks, setTracks] = useState([{ id: 'software', name: 'Software' }, { id: 'hardware', name: 'Hardware' }])
+  const [roundsByTrack, setRoundsByTrack] = useState({ software: ['Round 1', 'Round 2', 'Final'], hardware: ['Round 1', 'Round 2', 'Final'] })
+  const [bonusesByTrack, setBonusesByTrack] = useState({ software: ['HackerRank', 'Riddle Bonus'], hardware: [] })
   const [isFrozen, setIsFrozen] = useState(false)
   const [celebrationAt, setCelebrationAt] = useState(null)
   const [activeJudges, setActiveJudges] = useState([])
@@ -47,14 +46,15 @@ export default function useTeamsRealtime() {
   const [lockedRounds, setLockedRounds] = useState([])
   const [updatedIds, setUpdatedIds] = useState(() => new Set())
   const [lastUpdateAt, setLastUpdateAt] = useState(null)
+  const [hackathonData, setHackathonData] = useState(null)
 
   useEffect(() => {
-    if (!firebaseEnabled || !db) return undefined
+    if (!firebaseEnabled || !db || !hackathonId) return undefined
 
     const prevById = new Map()
     const timers = new Map()
 
-    const q = query(collection(db, TEAMS_COLLECTION))
+    const q = query(collection(db, 'hackathons', hackathonId, 'teams'))
     const unsubTeams = onSnapshot(q, (snap) => {
       const next = []
       const nextUpdated = new Set()
@@ -98,18 +98,35 @@ export default function useTeamsRealtime() {
       }
     })
 
-    const unsubSettings = onSnapshot(doc(db, SETTINGS_COLLECTION, CONFIG_DOC), (docSnap) => {
+    const unsubSettings = onSnapshot(doc(db, 'hackathons', hackathonId, 'settings', CONFIG_DOC), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data()
         
-        if (Array.isArray(data.rounds_software)) setRoundNamesSoftware(data.rounds_software)
-        else if (Array.isArray(data.rounds)) setRoundNamesSoftware(data.rounds)
-        
-        if (Array.isArray(data.rounds_hardware)) setRoundNamesHardware(data.rounds_hardware)
-        else if (Array.isArray(data.rounds)) setRoundNamesHardware(data.rounds)
+        if (data.tracks && Array.isArray(data.tracks)) {
+          setTracks(data.tracks)
+        } else {
+          setTracks([{ id: 'software', name: 'Software' }, { id: 'hardware', name: 'Hardware' }])
+        }
 
-        if (Array.isArray(data.bonuses_software)) setBonusNamesSoftware(data.bonuses_software)
-        if (Array.isArray(data.bonuses_hardware)) setBonusNamesHardware(data.bonuses_hardware)
+        const nextRounds = { software: [], hardware: [] }
+        if (data.rounds && !Array.isArray(data.rounds)) {
+          Object.assign(nextRounds, data.rounds)
+        } else {
+          if (Array.isArray(data.rounds_software)) nextRounds.software = data.rounds_software
+          else if (Array.isArray(data.rounds)) nextRounds.software = data.rounds
+          if (Array.isArray(data.rounds_hardware)) nextRounds.hardware = data.rounds_hardware
+          else if (Array.isArray(data.rounds)) nextRounds.hardware = data.rounds
+        }
+        setRoundsByTrack(nextRounds)
+
+        const nextBonuses = { software: [], hardware: [] }
+        if (data.bonuses && !Array.isArray(data.bonuses)) {
+          Object.assign(nextBonuses, data.bonuses)
+        } else {
+          if (Array.isArray(data.bonuses_software)) nextBonuses.software = data.bonuses_software
+          if (Array.isArray(data.bonuses_hardware)) nextBonuses.hardware = data.bonuses_hardware
+        }
+        setBonusesByTrack(nextBonuses)
 
         setIsFrozen(Boolean(data.isFrozen))
         if (data.activeJudges) setActiveJudges(data.activeJudges)
@@ -121,32 +138,39 @@ export default function useTeamsRealtime() {
       }
     })
 
-    const unsubJudges = onSnapshot(collection(db, 'judges'), (snap) => {
+    const unsubJudges = onSnapshot(collection(db, 'hackathons', hackathonId, 'judges'), (snap) => {
       const parsed = []
       snap.forEach(d => {
         parsed.push({ ...d.data(), id: d.id })
       })
-      // Sort Judges alphabetically
       parsed.sort((a,b) => a.name?.localeCompare(b.name))
       setJudgesList(parsed)
+    })
+
+    const unsubHackathon = onSnapshot(doc(db, 'hackathons', hackathonId), (snap) => {
+      if (snap.exists()) {
+        setHackathonData({ id: snap.id, ...snap.data() })
+      } else {
+        setHackathonData(null)
+      }
     })
 
     return () => {
       unsubTeams()
       unsubSettings()
       unsubJudges()
+      unsubHackathon()
       for (const t of timers.values()) clearTimeout(t)
       timers.clear()
     }
-  }, [])
+  }, [hackathonId])
 
   const updatedIdsMemo = useMemo(() => updatedIds, [updatedIds])
   return { 
     teams, 
-    roundNamesSoftware, 
-    roundNamesHardware, 
-    bonusNamesSoftware,
-    bonusNamesHardware,
+    tracks, 
+    roundsByTrack, 
+    bonusesByTrack,
     isFrozen, 
     celebrationAt, 
     updatedIds: updatedIdsMemo, 
@@ -154,6 +178,7 @@ export default function useTeamsRealtime() {
     activeJudges,
     judgesList,
     rubrics,
-    lockedRounds
+    lockedRounds,
+    hackathonData
   }
 }

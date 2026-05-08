@@ -7,12 +7,12 @@ import {
   setDoc,
   deleteDoc,
   updateDoc,
-  writeBatch
+  writeBatch,
+  arrayUnion,
+  arrayRemove
 } from 'firebase/firestore'
 import { db, firebaseEnabled } from './firebase.js'
-import { TEAMS_COLLECTION, SETTINGS_COLLECTION, CONFIG_DOC } from './teams.js'
-
-export const JUDGES_COLLECTION = 'judges'
+import { CONFIG_DOC } from './teams.js'
 
 export function assertFirebaseEnabled() {
   if (!firebaseEnabled || !db) {
@@ -20,15 +20,23 @@ export function assertFirebaseEnabled() {
   }
 }
 
+function getJudgesCol(hackathonId) {
+  return collection(db, 'hackathons', hackathonId, 'judges')
+}
+
+function getGlobalsDoc(hackathonId) {
+  return doc(db, 'hackathons', hackathonId, 'settings', CONFIG_DOC)
+}
+
 // 1. Add Judge
-export async function addJudge(uid, name) {
+export async function addJudge(hackathonId, uid, name) {
   assertFirebaseEnabled()
-  if (!uid || !name) throw new Error('Missing judge uid or name')
+  if (!hackathonId || !uid || !name) throw new Error('Missing hackathonId, uid or name')
 
   const batch = writeBatch(db)
   
   // Create judge doc
-  const judgeRef = doc(db, JUDGES_COLLECTION, uid)
+  const judgeRef = doc(db, 'hackathons', hackathonId, 'judges', uid)
   batch.set(judgeRef, {
     id: uid,
     name: name.trim(),
@@ -37,7 +45,7 @@ export async function addJudge(uid, name) {
   })
 
   // Add to activeJudges in settings
-  const globalsRef = doc(db, SETTINGS_COLLECTION, CONFIG_DOC)
+  const globalsRef = getGlobalsDoc(hackathonId)
   const globalsSnap = await getDoc(globalsRef)
   let activeJudges = []
   if (globalsSnap.exists()) {
@@ -48,15 +56,20 @@ export async function addJudge(uid, name) {
     batch.set(globalsRef, { activeJudges, updatedAt: serverTimestamp() }, { merge: true })
   }
 
+  // Update hackathon document with judges array for easy querying
+  const hackathonRef = doc(db, 'hackathons', hackathonId)
+  batch.update(hackathonRef, { judges: arrayUnion(uid) })
+
   await batch.commit()
 }
 
 // 2. Remove / Disable Judge
-export async function removeJudge(judgeId) {
+export async function removeJudge(hackathonId, judgeId) {
   assertFirebaseEnabled()
+  if (!hackathonId || !judgeId) throw new Error('Missing hackathonId or judgeId')
   
   // 1. Update settings/globals to remove from activeJudges
-  const globalsRef = doc(db, SETTINGS_COLLECTION, CONFIG_DOC)
+  const globalsRef = getGlobalsDoc(hackathonId)
   const globalsSnap = await getDoc(globalsRef)
   let activeJudges = []
   if (globalsSnap.exists()) {
@@ -68,35 +81,38 @@ export async function removeJudge(judgeId) {
     await updateDoc(globalsRef, { activeJudges, updatedAt: serverTimestamp() })
   }
 
-  // 2. Set isActive false (or delete)
-  await deleteDoc(doc(db, JUDGES_COLLECTION, judgeId))
+  // 2. Update hackathon document to remove from judges array
+  const hackathonRef = doc(db, 'hackathons', hackathonId)
+  await updateDoc(hackathonRef, { judges: arrayRemove(judgeId) })
 
-  // Removed recalculate logic since scoring is absolute now.
+  // 3. Set isActive false (or delete)
+  await deleteDoc(doc(db, 'hackathons', hackathonId, 'judges', judgeId))
 }
 
 // 3. Edit Judge Name
-export async function updateJudgeName(judgeId, newName) {
+export async function updateJudgeName(hackathonId, judgeId, newName) {
   assertFirebaseEnabled()
-  if(!newName) return
-  await updateDoc(doc(db, JUDGES_COLLECTION, judgeId), {
+  if(!hackathonId || !judgeId || !newName) return
+  await updateDoc(doc(db, 'hackathons', hackathonId, 'judges', judgeId), {
     name: newName.trim(),
     updatedAt: serverTimestamp()
   })
 }
 
 // 4. Submit Score & Average Logic (Singular Wrapper)
-export async function submitScore(teamId, roundName, judgeId, scoreData) {
-  return submitScoresBatch(teamId, { [roundName]: scoreData }, judgeId)
+export async function submitScore(hackathonId, teamId, roundName, judgeId, scoreData) {
+  return submitScoresBatch(hackathonId, teamId, { [roundName]: scoreData }, judgeId)
 }
 
 // 4b. Submit Multiple Scores Safely
-export async function submitScoresBatch(teamId, roundScoresMap, judgeId) {
+export async function submitScoresBatch(hackathonId, teamId, roundScoresMap, judgeId) {
   assertFirebaseEnabled()
+  if (!hackathonId || !teamId || !judgeId) throw new Error('Missing parameters')
   const roundNames = Object.keys(roundScoresMap)
   if (!roundNames.length) return
 
   // Get current state to verify judge activity and locks
-  const globalsRef = doc(db, SETTINGS_COLLECTION, CONFIG_DOC)
+  const globalsRef = getGlobalsDoc(hackathonId)
   const globalsSnap = await getDoc(globalsRef)
   const data_globals = globalsSnap.exists() ? globalsSnap.data() : {}
   const activeJudges = data_globals.activeJudges || []
@@ -106,7 +122,7 @@ export async function submitScoresBatch(teamId, roundScoresMap, judgeId) {
     throw new Error('Judge is not active or deleted')
   }
 
-  const teamRef = doc(db, TEAMS_COLLECTION, teamId)
+  const teamRef = doc(db, 'hackathons', hackathonId, 'teams', teamId)
   const teamSnap = await getDoc(teamRef)
   if (!teamSnap.exists()) throw new Error('Team not found')
   const teamData = teamSnap.data()

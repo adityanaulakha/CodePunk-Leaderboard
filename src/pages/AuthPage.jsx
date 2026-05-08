@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { auth, firebaseEnabled } from '../lib/firebase.js'
 import { useAuthState } from './AdminPage.jsx'
 
@@ -11,8 +11,13 @@ export default function AuthPage() {
   
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [isSignUp, setIsSignUp] = useState(false)
-  const [status, setStatus] = useState({ type: 'idle', message: '' })
+  const [searchParams] = useSearchParams()
+  const [isSignUp, setIsSignUp] = useState(searchParams.get('mode') === 'signup')
+  const [status, setStatus] = useState({ type: 'idle', message: '', code: '' })
+
+  useEffect(() => {
+    setIsSignUp(searchParams.get('mode') === 'signup')
+  }, [searchParams])
 
   const canSubmit = useMemo(() => email.trim() && password, [email, password])
 
@@ -29,7 +34,7 @@ export default function AuthPage() {
     try {
       if (!auth) throw new Error('Firebase Auth not configured')
       await sendPasswordResetEmail(auth, email.trim())
-      setStatus({ type: 'success', message: 'PASSWORD RESET LINK SENT TO YOUR EMAIL' })
+      setStatus({ type: 'success', message: 'PASSWORD RESET LINK SENT TO YOUR EMAIL. CHECK SPAM/JUNK IF NOT IN INBOX.' })
     } catch (err) {
       setStatus({ type: 'error', message: err?.message || 'FAILED TO SEND RESET LINK' })
     }
@@ -37,7 +42,7 @@ export default function AuthPage() {
 
   async function onSubmit(e) {
     e.preventDefault()
-    setStatus({ type: 'loading', message: isSignUp ? 'CREATING ACCOUNT...' : 'LOGGING IN...' })
+    setStatus({ type: 'loading', message: isSignUp ? 'CREATING ACCOUNT...' : 'LOGGING IN...', code: '' })
     try {
       if (!auth) throw new Error('Firebase Auth not configured')
       if (isSignUp) {
@@ -46,7 +51,22 @@ export default function AuthPage() {
         await signInWithEmailAndPassword(auth, email.trim(), password)
       }
     } catch (err) {
-      setStatus({ type: 'error', message: err?.message || 'AUTHENTICATION FAILED' })
+      let friendlyMessage = err?.message || 'AUTHENTICATION FAILED'
+      let code = ''
+      
+      if (err?.code === 'auth/email-already-in-use') {
+        friendlyMessage = 'THIS EMAIL IS ALREADY IN USE. CHOOSE A DIFFERENT ONE OR LOG IN.'
+        code = 'email-already-in-use'
+      } else if (err?.code === 'auth/user-not-found' || err?.code === 'auth/invalid-credential') {
+        if (isSignUp) {
+          friendlyMessage = err?.message || 'AUTHENTICATION FAILED'
+        } else {
+          friendlyMessage = 'THIS EMAIL IS NOT REGISTERED. PLEASE SIGN UP TO CREATE A NEW ACCOUNT.'
+          code = 'user-not-found'
+        }
+      }
+      
+      setStatus({ type: 'error', message: friendlyMessage, code })
     }
   }
 
@@ -125,16 +145,36 @@ export default function AuthPage() {
         <AnimatePresence>
           {status.type !== 'idle' && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className={`mt-6 border-4 border-neo-black px-4 py-4 font-black uppercase tracking-widest text-sm shadow-brutal-sm ${
-                status.type === 'error'
-                  ? 'bg-neo-red text-white'
-                  : 'bg-green-400 text-neo-black'
-              }`}
+               initial={{ opacity: 0, height: 0 }}
+               animate={{ opacity: 1, height: 'auto' }}
+               exit={{ opacity: 0, height: 0 }}
+               className={`mt-6 border-4 border-neo-black px-4 py-4 font-black uppercase tracking-widest text-sm shadow-brutal-sm ${
+                 status.type === 'error'
+                   ? 'bg-neo-red text-white'
+                   : 'bg-green-400 text-neo-black'
+               }`}
             >
-              {status.message}
+              <div className="flex flex-col gap-2">
+                <span>{status.message}</span>
+                {status.code === 'email-already-in-use' && (
+                  <button 
+                    type="button" 
+                    onClick={() => { setIsSignUp(false); setStatus({ type: 'idle', message: '', code: '' }); }}
+                    className="mt-2 text-xs font-black uppercase tracking-widest text-neo-yellow underline underline-offset-4 hover:text-white transition-colors self-start cursor-pointer"
+                  >
+                    GO TO LOG IN &rarr;
+                  </button>
+                )}
+                {status.code === 'user-not-found' && (
+                  <button 
+                    type="button" 
+                    onClick={() => { setIsSignUp(true); setStatus({ type: 'idle', message: '', code: '' }); }}
+                    className="mt-2 text-xs font-black uppercase tracking-widest text-neo-yellow underline underline-offset-4 hover:text-white transition-colors self-start cursor-pointer"
+                  >
+                    GO TO SIGN UP &rarr;
+                  </button>
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

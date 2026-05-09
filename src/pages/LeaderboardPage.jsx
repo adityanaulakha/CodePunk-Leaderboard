@@ -1,160 +1,185 @@
+import { useState, useMemo, useEffect } from 'react'
+import { useParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Link } from 'react-router-dom'
-import { useEffect, useState } from 'react'
 import Confetti from 'react-confetti'
 import { useWindowSize } from 'react-use'
-import LiveIndicator from '../components/LiveIndicator.jsx'
 import LeaderboardTable from '../components/LeaderboardTable.jsx'
 import useTeamsRealtime from '../hooks/useTeamsRealtime.js'
-import { firebaseEnabled } from '../lib/firebase.js'
+import { useAuthState, useRoles } from './AdminPage.jsx'
 
-const MotionDiv = motion.div
+function LiveIndicator() {
+  return (
+    <div className="flex items-center gap-2 bg-neo-yellow border-4 border-neo-black px-4 py-2 shadow-[4px_4px_0_#111]">
+      <motion.div
+        animate={{ opacity: [1, 0.2, 1] }}
+        transition={{ duration: 1.5, repeat: Infinity }}
+        className="w-3 h-3 bg-neo-red border-2 border-neo-black rounded-full"
+      />
+      <span className="font-black text-xs uppercase tracking-[0.2em] text-neo-black pt-1">LIVE DATA</span>
+    </div>
+  )
+}
+
+function CategoryTabs({ current, onChange, tracks = [] }) {
+  if (!tracks || tracks.length <= 1) return null;
+  return (
+    <div className="flex flex-wrap items-center bg-white border-4 border-neo-black p-1 shadow-[6px_6px_0_#111]">
+      {tracks.map(t => (
+        <button
+          key={t.id}
+          onClick={() => onChange(t.id)}
+          className={`flex-1 px-6 py-3 font-hero text-2xl uppercase transition-colors whitespace-nowrap ${
+            current === t.id 
+              ? 'bg-neo-black text-neo-yellow' 
+              : 'text-neo-black hover:bg-neo-lightgray'
+          }`}
+        >
+          {t.name}
+        </button>
+      ))}
+    </div>
+  )
+}
 
 export default function LeaderboardPage() {
+  const { hackathonId } = useParams()
+  const user = useAuthState()
+  const { isAdmin, isJudge } = useRoles(user, hackathonId)
   const { width, height } = useWindowSize()
-  const { teams, roundNamesSoftware, roundNamesHardware, bonusNamesSoftware, bonusNamesHardware, isFrozen, celebrationAt, updatedIds, lastUpdateAt } = useTeamsRealtime()
 
-  const [activeTrack, setActiveTrack] = useState('software')
+  const { 
+    teams, 
+    tracks,
+    roundsByTrack,
+    bonusesByTrack,
+    isFrozen,
+    celebrationAt,
+    updatedIds,
+  } = useTeamsRealtime(hackathonId)
+
+  const [track, setTrack] = useState('')
+  const [displayTeams, setDisplayTeams] = useState(teams)
   const [showConfetti, setShowConfetti] = useState(false)
+
+  // Initialize track
   useEffect(() => {
-    if (!celebrationAt) return
-    const now = Date.now()
-    if (now - celebrationAt < 10000) {
-      setShowConfetti(true)
-      const t = setTimeout(() => setShowConfetti(false), 10000 - (now - celebrationAt))
-      return () => clearTimeout(t)
-    } else {
-      setShowConfetti(false)
+    if (tracks && tracks.length > 0 && !track) {
+      setTrack(tracks[0].id)
+    }
+  }, [tracks, track])
+
+  // Freeze functionality
+  useEffect(() => {
+    if (!isFrozen) {
+      setDisplayTeams(teams)
+    } else if (displayTeams.length === 0 && teams.length > 0) {
+      setDisplayTeams(teams)
+    }
+  }, [teams, isFrozen, displayTeams.length])
+
+  // Celebration functionality
+  useEffect(() => {
+    if (celebrationAt) {
+      const timeDiff = Date.now() - celebrationAt
+      if (timeDiff < 15000) {
+        setShowConfetti(true)
+        const timer = setTimeout(() => setShowConfetti(false), 15000 - timeDiff)
+        return () => clearTimeout(timer)
+      }
     }
   }, [celebrationAt])
 
+
+
+  const filteredTeams = useMemo(() => {
+    return displayTeams.filter(t => t.track === track)
+  }, [displayTeams, track])
+
+  const roundNames = roundsByTrack?.[track] || []
+  const bonusNames = bonusesByTrack?.[track] || []
+
+  let backUrl = "/"
+  if (user) {
+    if (isAdmin) backUrl = `/${hackathonId}/admin`
+    else if (isJudge) backUrl = `/${hackathonId}/judge`
+    else backUrl = "/dashboard"
+  }
+
   return (
-    <div className="min-h-screen relative overflow-x-clip text-zinc-100">
+    <div className="min-h-screen bg-neo-white text-neo-black font-base relative overflow-hidden flex flex-col">
       {showConfetti && (
-        <Confetti 
-          width={width} 
-          height={height} 
-          recycle={false}
-          numberOfPieces={800}
-          gravity={0.15}
-          initialVelocityY={20}
-          colors={['#FF003C', '#00F0FF', '#FF00A0', '#FF4D00', '#111111', '#FFFFFF']}
-          style={{ position: 'fixed', top: 0, left: 0, zIndex: 9999, pointerEvents: 'none' }}
-        />
+        <div className="fixed inset-0 z-[100] pointer-events-none">
+          <Confetti width={width} height={height} numberOfPieces={300} gravity={0.15} />
+        </div>
       )}
-      {/* Decorative Glitch Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-gwen-pink/20 rounded-full mix-blend-screen filter blur-[100px] pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-gwen-cyan/20 rounded-full mix-blend-screen filter blur-[120px] pointer-events-none"></div>
-      
-      <MotionDiv
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="mx-auto max-w-6xl px-3 sm:px-4 py-6 sm:py-10 relative z-10"
-      >
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:gap-6 mb-8 sm:mb-12">
-          <div className="relative">
-            {/* Themed decorative accent */}
-            <div className="absolute -left-3 sm:-left-4 top-0 w-1 h-full bg-spidey-red shadow-comic-red"></div>
-            
-            <div className="text-xs sm:text-sm font-bold uppercase tracking-[0.3em] sm:tracking-[0.4em] text-gwen-cyan mb-1 sm:mb-2">
-              Droid Club
-            </div>
-            <h1 
-              data-text="CODEPUNK V2.0 LEADERBOARD"
-              className="font-hero text-3xl sm:text-5xl md:text-7xl font-bold tracking-wider text-white text-glitch uppercase drop-shadow-[4px_4px_0_rgba(0,0,0,1)]"
-            >
-              CodePunk v2.0 Leaderboard
-            </h1>
-            <p className="mt-2 sm:mt-3 max-w-2xl text-xs sm:text-base font-medium text-zinc-300 bg-zinc-950/80 inline-block px-2 sm:px-3 py-1 border-l-2 border-gwen-pink backdrop-blur-sm shadow-comic">
-              Scores update in real time. Rankings auto-sort by total marks.
-            </p>
-          </div>
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(17,17,17,0.05)_2px,transparent_2px),linear-gradient(90deg,rgba(17,17,17,0.05)_2px,transparent_2px)] bg-[size:32px_32px] pointer-events-none"></div>
 
-          {/* Controls row */}
-          <div className="flex items-center flex-wrap gap-3 sm:gap-4">
-            <LiveIndicator lastUpdateAt={lastUpdateAt} />
-            <div className="flex-1"></div>
-            <Link
-              to="/judge"
-              className="font-hero text-sm sm:text-xl rounded-none border-2 border-zinc-900 bg-spidey-blue hover:bg-gwen-pink px-3 sm:px-6 py-1.5 sm:py-2 uppercase tracking-widest text-zinc-900 transition-all shadow-comic hover:-translate-y-1 hover:-translate-x-1 hover:shadow-comic-cyan"
-            >
-              Judge Portal
-            </Link>
-            <Link
-              to="/admin"
-              className="font-hero text-sm sm:text-xl rounded-none border-2 border-zinc-900 bg-gwen-cyan hover:bg-gwen-pink px-3 sm:px-6 py-1.5 sm:py-2 uppercase tracking-widest text-zinc-900 transition-all shadow-comic hover:-translate-y-1 hover:-translate-x-1 hover:shadow-comic-cyan"
-            >
-              Admin Portal
-            </Link>
-          </div>
-        </div>
-
-        {!firebaseEnabled ? (
-          <div className="mt-4 sm:mt-8 relative overflow-hidden rounded-none border-4 border-spidey-blue bg-zinc-900 p-4 sm:p-6 text-sm sm:text-base font-bold text-white shadow-comic-cyan">
-            <div className="absolute top-0 right-0 w-16 h-16 bg-spidey-red rotate-45 translate-x-8 -translate-y-8"></div>
-            WARNING: Firebase is not configured! Add your `VITE_FIREBASE_*` env vars, then restart.
-          </div>
-        ) : null}
-
-        {/* Track Tabs */}
-        <div className="flex gap-2 sm:gap-4 justify-center mt-4 sm:mt-6">
-          <button 
-            onClick={() => setActiveTrack('software')} 
-            className={`px-4 sm:px-8 py-2 sm:py-3 font-hero text-xl sm:text-3xl border-4 transition-all uppercase tracking-widest ${activeTrack==='software' ? 'bg-gwen-cyan text-zinc-900 border-gwen-cyan scale-105 shadow-comic-cyan z-10' : 'bg-transparent text-zinc-400 border-zinc-700 shadow-comic hover:border-zinc-500'}`}
-          >
-            SOFTWARE
-          </button>
-          <button 
-            onClick={() => setActiveTrack('hardware')} 
-            className={`px-4 sm:px-8 py-2 sm:py-3 font-hero text-xl sm:text-3xl border-4 transition-all uppercase tracking-widest ${activeTrack==='hardware' ? 'bg-2099-orange text-zinc-900 border-2099-orange scale-105 shadow-comic z-10' : 'bg-transparent text-zinc-400 border-zinc-700 shadow-comic hover:border-zinc-500'}`}
-          >
-            HARDWARE
-          </button>
-        </div>
-
-        <div className="mt-6 sm:mt-8 relative">
-          {isFrozen && (
-            <div className="absolute inset-0 z-50 backdrop-blur-xl bg-zinc-950/60 flex items-center justify-center p-4 sm:p-8 border-4 border-gwen-pink shadow-comic-pink">
-              <div className="text-center">
-                <h2 className="font-hero text-4xl sm:text-6xl md:text-8xl text-white tracking-widest text-glitch uppercase drop-shadow-[4px_4px_0_rgba(0,0,0,1)]">
-                  Final Results Pending
-                </h2>
-                <div className="mt-4 inline-block bg-spidey-blue text-white px-4 sm:px-6 py-2 sm:py-3 font-hero text-xl sm:text-3xl tracking-widest shadow-[4px_4px_0_#111] animate-pulse">
-                  Stand by for the ultimate reveal...
+      <main className="flex-1 max-w-[1400px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 relative z-10 flex flex-col">
+        {/* Header Block */}
+        <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b-4 border-neo-black pb-8">
+          <div>
+            <div className="flex items-center gap-4 mb-6">
+              <Link to={backUrl} className="bg-white border-4 border-neo-black px-3 py-1 font-black text-xs uppercase tracking-[0.2em] hover:bg-neo-yellow transition-colors shadow-brutal-sm flex items-center gap-2">
+                &larr; BACK
+              </Link>
+              {!isFrozen && <LiveIndicator />}
+              {isFrozen && (
+                <div className="bg-cyan-300 border-4 border-neo-black px-4 py-2 font-black text-xs uppercase tracking-[0.2em] shadow-[4px_4px_0_#111] animate-pulse">
+                  ❄ LEADERBOARD FROZEN
                 </div>
-              </div>
+              )}
             </div>
-          )}
-          
-          <div className={`max-w-full ${isFrozen ? 'opacity-30 pointer-events-none' : ''}`}>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTrack}
-                initial={{ opacity: 0, x: activeTrack === 'hardware' ? 50 : -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: activeTrack === 'hardware' ? -50 : 50 }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-              >
-                <LeaderboardTable 
-                  teams={teams.filter(t => t.track === activeTrack)} 
-                  roundNames={activeTrack === 'hardware' ? roundNamesHardware : roundNamesSoftware} 
-                  bonusNames={activeTrack === 'hardware' ? bonusNamesHardware : bonusNamesSoftware}
-                  updatedIds={updatedIds} 
-                />
-              </motion.div>
-            </AnimatePresence>
+            
+            <h1 className="font-hero text-[4rem] sm:text-[5rem] lg:text-[7rem] tracking-tight uppercase leading-[0.85] text-neo-black">
+              <span className="block">GLOBAL</span>
+              <span className="inline-block bg-neo-yellow border-[4px] sm:border-[6px] border-neo-black px-4 sm:px-6 my-2 shadow-[8px_8px_0_#111] -rotate-1">
+                RANKS
+              </span>
+            </h1>
           </div>
-        </div>
 
-        <div className="mt-6 sm:mt-10 inline-block font-hero text-sm sm:text-xl bg-zinc-900 border-2 border-zinc-800 text-gwen-cyan px-3 sm:px-4 py-2 shadow-comic skew-x-[-2deg]">
-          Total = {[
-            ...(activeTrack === 'hardware' ? roundNamesHardware : roundNamesSoftware),
-            ...(activeTrack === 'hardware' ? bonusNamesHardware : bonusNamesSoftware)
-          ].join(' + ')}
+          <div className="flex flex-col gap-4 items-start md:items-end w-full md:w-auto">
+             <CategoryTabs current={track} onChange={setTrack} tracks={tracks} />
+             <div className="border-4 border-neo-black bg-white px-4 py-2 font-black text-xs uppercase tracking-[0.2em] shadow-[4px_4px_0_#111] flex items-center gap-3 w-full md:w-auto justify-center">
+                <span>TOTAL TEAMS:</span>
+                <span className="text-neo-yellow text-xl drop-shadow-[1px_1px_0_#111]">{filteredTeams.length}</span>
+             </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <div className="flex-1">
+          {filteredTeams.length === 0 ? (
+            <div className="border-4 border-dashed border-neo-black p-16 text-center bg-white/50 shadow-[12px_12px_0_#111]">
+               <div className="w-20 h-20 mx-auto bg-neo-lightgray border-4 border-neo-black rounded-full flex items-center justify-center mb-6">
+                 <span className="text-3xl">📡</span>
+               </div>
+               <h3 className="font-hero text-4xl mb-2">NO SIGNALS DETECTED</h3>
+               <p className="font-black text-xs uppercase tracking-widest text-gray-500">Awaiting team data for {track} track...</p>
+            </div>
+          ) : (
+            <LeaderboardTable 
+              teams={filteredTeams} 
+              roundNames={roundNames} 
+              bonusNames={bonusNames}
+              updatedIds={updatedIds}
+            />
+          )}
         </div>
-      </MotionDiv>
+      </main>
+
+      {/* Footer Banner */}
+      <div className="border-t-4 border-neo-black bg-neo-black py-3 mt-12 relative z-20">
+         <div className="flex justify-between items-center px-6 max-w-[1400px] mx-auto">
+           <div className="font-black text-[10px] text-neo-white uppercase tracking-[0.3em]">
+             SYS.OP.NORMAL // SECURE CONNECTION
+           </div>
+           <div className="flex gap-2">
+             <div className="w-3 h-3 border-2 border-neo-white bg-neo-yellow rounded-full"></div>
+             <div className="w-3 h-3 border-2 border-neo-white bg-green-400 rounded-full"></div>
+           </div>
+         </div>
+      </div>
     </div>
   )
 }

@@ -12,8 +12,6 @@ import {
 } from 'firebase/firestore'
 import { db, firebaseEnabled } from './firebase.js'
 
-export const TEAMS_COLLECTION = 'teams'
-export const SETTINGS_COLLECTION = 'settings'
 export const CONFIG_DOC = 'globals'
 
 export function computeTotal(teamData) {
@@ -26,7 +24,6 @@ export function computeTotal(teamData) {
        const vals = Object.values(v)
        if (vals.length > 0) v = vals[0]
     }
-    // Score can be a simple number or an object from the rubric like { total: x, criteria: {} }
     const num = (v && typeof v === 'object') ? Number(v.total) : Number(v)
     if (Number.isFinite(num)) total += num
   }
@@ -71,12 +68,21 @@ export function assertFirebaseEnabled() {
   }
 }
 
-export async function addTeam({ name, track = 'software', scores = {} }) {
+function getTeamsCol(hackathonId) {
+  return collection(db, 'hackathons', hackathonId, 'teams')
+}
+
+function getGlobalsDoc(hackathonId) {
+  return doc(db, 'hackathons', hackathonId, 'settings', CONFIG_DOC)
+}
+
+export async function addTeam(hackathonId, { name, track = 'software', scores = {} }) {
   assertFirebaseEnabled()
+  if (!hackathonId) throw new Error('Missing hackathonId')
   const trimmedName = String(name).trim()
   if (!trimmedName) throw new Error('Team name is missing')
 
-  await addDoc(collection(db, TEAMS_COLLECTION), {
+  await addDoc(getTeamsCol(hackathonId), {
     name: trimmedName,
     track: String(track).toLowerCase(),
     scores,
@@ -85,60 +91,76 @@ export async function addTeam({ name, track = 'software', scores = {} }) {
   })
 }
 
-export async function updateTeamScores(teamId, passedScores) {
+export async function updateTeamScores(hackathonId, teamId, passedScores) {
   assertFirebaseEnabled()
-  if (!teamId) throw new Error('Missing team id')
+  if (!hackathonId || !teamId) throw new Error('Missing hackathonId or team id')
 
   const cleanedScores = {}
   for (const [k, v] of Object.entries(passedScores)) {
     cleanedScores[k] = Number(v) || 0
   }
 
-  await updateDoc(doc(db, TEAMS_COLLECTION, teamId), {
+  await updateDoc(doc(db, 'hackathons', hackathonId, 'teams', teamId), {
     scores: cleanedScores,
     updatedAt: serverTimestamp(),
   })
 }
 
-
-
-export async function updateTeamBonuses(teamId, bonusesObj) {
+export async function updateTeamBonuses(hackathonId, teamId, bonusesObj) {
   assertFirebaseEnabled()
+  if (!hackathonId || !teamId) throw new Error('Missing hackathonId or team id')
   const clean = {}
   for (const [k, v] of Object.entries(bonusesObj || {})) {
      clean[k] = Number(v) || 0
   }
-  await updateDoc(doc(db, TEAMS_COLLECTION, teamId), {
+  await updateDoc(doc(db, 'hackathons', hackathonId, 'teams', teamId), {
     bonuses: clean,
     updatedAt: serverTimestamp()
   })
 }
 
-export async function updateBonusNames(track, bonusesArray) {
+export async function updateTracks(hackathonId, tracksArray) {
   assertFirebaseEnabled()
+  if (!hackathonId) throw new Error('Missing hackathonId')
+  await setDoc(getGlobalsDoc(hackathonId), {
+    tracks: tracksArray,
+    updatedAt: serverTimestamp()
+  }, { merge: true })
+}
+
+export async function updateBonusNames(hackathonId, track, bonusesArray) {
+  assertFirebaseEnabled()
+  if (!hackathonId) throw new Error('Missing hackathonId')
   if (!Array.isArray(bonusesArray)) throw new Error('bonusesArray must be an array')
   
-  // 1. Get current to see if we are deleting anything
-  const globalsRef = doc(db, SETTINGS_COLLECTION, CONFIG_DOC)
+  const globalsRef = getGlobalsDoc(hackathonId)
   const snap = await getDoc(globalsRef)
-  const field = track === 'hardware' ? 'bonuses_hardware' : 'bonuses_software'
-  const oldBonuses = snap.exists() ? (snap.data()[field] || []) : []
   
-  // 2. Perform the update
+  const data = snap.exists() ? snap.data() : {}
+  const bonusesObj = data.bonuses || {}
+  
+  // Legacy fallback read
+  let oldBonuses = bonusesObj[track] || []
+  if (!bonusesObj[track]) {
+    const field = track === 'hardware' ? 'bonuses_hardware' : 'bonuses_software'
+    if (data[field]) oldBonuses = data[field]
+  }
+  
+  const nextBonusesObj = { ...bonusesObj, [track]: bonusesArray }
+  
   await setDoc(globalsRef, {
-    [field]: bonusesArray,
+    bonuses: nextBonusesObj,
     updatedAt: serverTimestamp()
   }, { merge: true })
 
-  // 3. Purge data if a bonus was removed
   const removed = oldBonuses.filter(b => !bonusesArray.includes(b))
   if (removed.length > 0) {
-    await purgeTeamsData(track, 'bonuses', removed)
+    await purgeTeamsData(hackathonId, track, 'bonuses', removed)
   }
 }
 
-async function purgeTeamsData(track, mapField, keysToRemove) {
-  const snap = await getDocs(collection(db, TEAMS_COLLECTION))
+async function purgeTeamsData(hackathonId, track, mapField, keysToRemove) {
+  const snap = await getDocs(getTeamsCol(hackathonId))
   let batch = writeBatch(db)
   let count = 0
   for (const teamDoc of snap.docs) {
@@ -167,8 +189,9 @@ async function purgeTeamsData(track, mapField, keysToRemove) {
   if (count > 0) await batch.commit()
 }
 
-export async function toggleRoundLock(track, roundName, currentLockedRounds = []) {
+export async function toggleRoundLock(hackathonId, track, roundName, currentLockedRounds = []) {
   assertFirebaseEnabled()
+  if (!hackathonId) throw new Error('Missing hackathonId')
   const lockKey = `${track}_${roundName}`
   let nextLocked = []
   if (currentLockedRounds.includes(lockKey)) {
@@ -176,46 +199,48 @@ export async function toggleRoundLock(track, roundName, currentLockedRounds = []
   } else {
     nextLocked = [...currentLockedRounds, lockKey]
   }
-  await setDoc(doc(db, SETTINGS_COLLECTION, CONFIG_DOC), {
+  await setDoc(getGlobalsDoc(hackathonId), {
     lockedRounds: nextLocked,
     updatedAt: serverTimestamp()
   }, { merge: true })
 }
 
-export async function updateRubrics(rubricsMap) {
+export async function updateRubrics(hackathonId, rubricsMap) {
   assertFirebaseEnabled()
-  await setDoc(doc(db, SETTINGS_COLLECTION, CONFIG_DOC), {
+  if (!hackathonId) throw new Error('Missing hackathonId')
+  await setDoc(getGlobalsDoc(hackathonId), {
     rubrics: rubricsMap,
     updatedAt: serverTimestamp()
   }, { merge: true })
 }
 
-export async function updateTeamTrack(teamId, track) {
+export async function updateTeamTrack(hackathonId, teamId, track) {
   assertFirebaseEnabled()
-  await updateDoc(doc(db, TEAMS_COLLECTION, teamId), {
+  if (!hackathonId || !teamId) throw new Error('Missing hackathonId or team id')
+  await updateDoc(doc(db, 'hackathons', hackathonId, 'teams', teamId), {
     track: String(track).toLowerCase(),
     updatedAt: serverTimestamp()
   })
 }
 
-export async function deleteTeam(teamId) {
+export async function deleteTeam(hackathonId, teamId) {
   assertFirebaseEnabled()
-  if (!teamId) throw new Error('Missing team id')
-  await deleteDoc(doc(db, TEAMS_COLLECTION, teamId))
+  if (!hackathonId || !teamId) throw new Error('Missing hackathonId or team id')
+  await deleteDoc(doc(db, 'hackathons', hackathonId, 'teams', teamId))
 }
 
-export async function bulkImportTeams(rows) {
+export async function bulkImportTeams(hackathonId, rows) {
   assertFirebaseEnabled()
+  if (!hackathonId) throw new Error('Missing hackathonId')
   if (!Array.isArray(rows)) throw new Error('Rows must be an array')
 
   const batch = writeBatch(db)
-  const teamsCol = collection(db, TEAMS_COLLECTION)
 
   let added = 0
   for (const row of rows) {
     const name = String(row.name ?? '').trim()
     if (!name) continue
-    const ref = doc(collection(db, TEAMS_COLLECTION))
+    const ref = doc(collection(db, 'hackathons', hackathonId, 'teams'))
     batch.set(ref, {
       name,
       track: String(row.track || row.Track || 'software').toLowerCase(),
@@ -231,23 +256,31 @@ export async function bulkImportTeams(rows) {
   return { added }
 }
 
-export async function updateRoundNames(track, roundsArray) {
+export async function updateRoundNames(hackathonId, track, roundsArray) {
   assertFirebaseEnabled()
+  if (!hackathonId) throw new Error('Missing hackathonId')
   if (!Array.isArray(roundsArray)) throw new Error('roundsArray must be an array')
   
-  const globalsRef = doc(db, SETTINGS_COLLECTION, CONFIG_DOC)
+  const globalsRef = getGlobalsDoc(hackathonId)
   const snap = await getDoc(globalsRef)
-  const field = track === 'hardware' ? 'rounds_hardware' : 'rounds_software'
-  const oldRounds = snap.exists() ? (snap.data()[field] || []) : []
+  const data = snap.exists() ? snap.data() : {}
+  const roundsObj = data.rounds || {}
+
+  let oldRounds = roundsObj[track] || []
+  if (!roundsObj[track]) {
+    const field = track === 'hardware' ? 'rounds_hardware' : 'rounds_software'
+    if (data[field]) oldRounds = data[field]
+  }
   
+  const nextRoundsObj = { ...roundsObj, [track]: roundsArray }
+
   await setDoc(globalsRef, {
-    [field]: roundsArray,
+    rounds: nextRoundsObj,
     updatedAt: serverTimestamp()
   }, { merge: true })
 
   const removed = oldRounds.filter(r => !roundsArray.includes(r))
   if (removed.length > 0) {
-    // 1. Purge from rubrics map
     const rubrics = snap.exists() ? (snap.data().rubrics || {}) : {}
     let rubricMutated = false
     for (const r of removed) {
@@ -260,40 +293,44 @@ export async function updateRoundNames(track, roundsArray) {
       await setDoc(globalsRef, { rubrics, updatedAt: serverTimestamp() }, { merge: true })
     }
 
-    // 2. Purge scores
-    await purgeTeamsData(track, 'scores', removed)
+    await purgeTeamsData(hackathonId, track, 'scores', removed)
   }
 }
 
-export async function setLeaderboardFrozen(isFrozen) {
+export async function setLeaderboardFrozen(hackathonId, isFrozen) {
   assertFirebaseEnabled()
-  await setDoc(doc(db, SETTINGS_COLLECTION, CONFIG_DOC), {
+  if (!hackathonId) throw new Error('Missing hackathonId')
+  await setDoc(getGlobalsDoc(hackathonId), {
     isFrozen: Boolean(isFrozen),
     updatedAt: serverTimestamp()
   }, { merge: true })
 }
 
-export async function triggerCelebration() {
+export async function triggerCelebration(hackathonId) {
   assertFirebaseEnabled()
-  await setDoc(doc(db, SETTINGS_COLLECTION, CONFIG_DOC), {
+  if (!hackathonId) throw new Error('Missing hackathonId')
+  await setDoc(getGlobalsDoc(hackathonId), {
     isFrozen: false,
     celebrationAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   }, { merge: true })
 }
 
-export async function renameRound(track, oldName, newName, currentRounds) {
+export async function renameRound(hackathonId, track, oldName, newName, currentRounds) {
   assertFirebaseEnabled()
+  if (!hackathonId) throw new Error('Missing hackathonId')
   if (!oldName || !newName || oldName === newName) return
 
-  const globalsRef = doc(db, SETTINGS_COLLECTION, CONFIG_DOC)
+  const globalsRef = getGlobalsDoc(hackathonId)
   const globalsSnap = await getDoc(globalsRef)
   const data_globals = globalsSnap.data() || {}
 
   const updatedRounds = currentRounds.map(r => r === oldName ? newName : r)
   const batchCommit = writeBatch(db)
   
-  const field = track === 'hardware' ? 'rounds_hardware' : 'rounds_software'
+  const roundsObj = data_globals.rounds || {}
+  const nextRoundsObj = { ...roundsObj, [track]: updatedRounds }
+  
   const rubrics = data_globals.rubrics || {}
   const rubricKeyOld = `${track}_${oldName}`
   const rubricKeyNew = `${track}_${newName}`
@@ -304,12 +341,12 @@ export async function renameRound(track, oldName, newName, currentRounds) {
   }
 
   batchCommit.set(globalsRef, {
-    [field]: updatedRounds,
+    rounds: nextRoundsObj,
     rubrics,
     updatedAt: serverTimestamp()
   }, { merge: true })
 
-  const snap = await getDocs(collection(db, TEAMS_COLLECTION))
+  const snap = await getDocs(getTeamsCol(hackathonId))
   for (const teamDoc of snap.docs) {
     const data = teamDoc.data()
     const teamTrack = String(data.track || 'software').toLowerCase()
@@ -317,7 +354,6 @@ export async function renameRound(track, oldName, newName, currentRounds) {
 
     const updates = {}
     
-    // Rename in scores
     if (data.scores && data.scores[oldName] !== undefined) {
       const scores = { ...data.scores }
       scores[newName] = scores[oldName]
@@ -326,27 +362,33 @@ export async function renameRound(track, oldName, newName, currentRounds) {
     }
 
     if (Object.keys(updates).length > 0) {
-      await updateDoc(teamDoc.ref, { ...updates, updatedAt: serverTimestamp() })
+      batchCommit.update(teamDoc.ref, { ...updates, updatedAt: serverTimestamp() })
     }
   }
 
   await batchCommit.commit()
 }
 
-export async function renameBonus(track, oldName, newName, currentBonuses) {
+export async function renameBonus(hackathonId, track, oldName, newName, currentBonuses) {
   assertFirebaseEnabled()
+  if (!hackathonId) throw new Error('Missing hackathonId')
   if (!oldName || !newName || oldName === newName) return
 
   const updatedBonuses = currentBonuses.map(b => b === oldName ? newName : b)
   const batchCommit = writeBatch(db)
   
-  const field = track === 'hardware' ? 'bonuses_hardware' : 'bonuses_software'
-  batchCommit.set(doc(db, SETTINGS_COLLECTION, CONFIG_DOC), {
-    [field]: updatedBonuses,
+  const globalsRef = getGlobalsDoc(hackathonId)
+  const globalsSnap = await getDoc(globalsRef)
+  const data_globals = globalsSnap.data() || {}
+  const bonusesObj = data_globals.bonuses || {}
+  const nextBonusesObj = { ...bonusesObj, [track]: updatedBonuses }
+
+  batchCommit.set(globalsRef, {
+    bonuses: nextBonusesObj,
     updatedAt: serverTimestamp()
   }, { merge: true })
 
-  const snap = await getDocs(collection(db, TEAMS_COLLECTION))
+  const snap = await getDocs(getTeamsCol(hackathonId))
   for (const teamDoc of snap.docs) {
     const data = teamDoc.data()
     const teamTrack = String(data.track || 'software').toLowerCase()
@@ -356,7 +398,7 @@ export async function renameBonus(track, oldName, newName, currentBonuses) {
       const bonuses = { ...data.bonuses }
       bonuses[newName] = bonuses[oldName]
       delete bonuses[oldName]
-      await updateDoc(teamDoc.ref, {
+      batchCommit.update(teamDoc.ref, {
         bonuses,
         updatedAt: serverTimestamp()
       })
@@ -366,10 +408,10 @@ export async function renameBonus(track, oldName, newName, currentBonuses) {
   await batchCommit.commit()
 }
 
-// Delete ALL
-export async function deleteAllTeams() {
+export async function deleteAllTeams(hackathonId) {
   assertFirebaseEnabled()
-  const snap = await getDocs(collection(db, TEAMS_COLLECTION))
+  if (!hackathonId) throw new Error('Missing hackathonId')
+  const snap = await getDocs(getTeamsCol(hackathonId))
   if (snap.empty) return
 
   let batch = writeBatch(db)
@@ -390,9 +432,10 @@ export async function deleteAllTeams() {
   }
 }
 
-export async function resetRoundScores(track) {
+export async function resetRoundScores(hackathonId, track) {
   assertFirebaseEnabled()
-  const snap = await getDocs(collection(db, TEAMS_COLLECTION))
+  if (!hackathonId) throw new Error('Missing hackathonId')
+  const snap = await getDocs(getTeamsCol(hackathonId))
   if (snap.empty) return
 
   let batch = writeBatch(db)
@@ -426,9 +469,10 @@ export async function resetRoundScores(track) {
   }
 }
 
-export async function resetBonusScores(track) {
+export async function resetBonusScores(hackathonId, track) {
   assertFirebaseEnabled()
-  const snap = await getDocs(collection(db, TEAMS_COLLECTION))
+  if (!hackathonId) throw new Error('Missing hackathonId')
+  const snap = await getDocs(getTeamsCol(hackathonId))
   if (snap.empty) return
 
   let batch = writeBatch(db)
@@ -454,6 +498,34 @@ export async function resetBonusScores(track) {
       await batch.commit()
       batch = writeBatch(db)
       count = 0
+    }
+  }
+
+  if (count > 0) {
+    await batch.commit()
+  }
+}
+export async function deleteTeamsInTrack(hackathonId, track) {
+  assertFirebaseEnabled()
+  if (!hackathonId || !track) throw new Error('Missing hackathonId or track')
+  const snap = await getDocs(getTeamsCol(hackathonId))
+  if (snap.empty) return
+
+  let batch = writeBatch(db)
+  let count = 0
+
+  for (const teamDoc of snap.docs) {
+    const data = teamDoc.data()
+    const teamTrack = String(data.track || 'software').toLowerCase()
+    
+    if (teamTrack === track.toLowerCase()) {
+      batch.delete(teamDoc.ref)
+      count++
+      if (count >= 400) {
+        await batch.commit()
+        batch = writeBatch(db)
+        count = 0
+      }
     }
   }
 

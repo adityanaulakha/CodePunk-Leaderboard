@@ -4,6 +4,7 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswor
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { auth, firebaseEnabled } from '../lib/firebase.js'
 import { useAuthState } from './AdminPage.jsx'
+import { sanitizeString } from '../utils/sanitize.js'
 
 export default function AuthPage() {
   const user = useAuthState()
@@ -30,10 +31,15 @@ export default function AuthPage() {
       setStatus({ type: 'error', message: 'PLEASE ENTER YOUR EMAIL ADDRESS FIRST' })
       return
     }
+    const cleanEmail = sanitizeString(email)
+    if (!cleanEmail) {
+      setStatus({ type: 'error', message: 'PLEASE ENTER A VALID EMAIL ADDRESS' })
+      return
+    }
     setStatus({ type: 'loading', message: 'SENDING RESET LINK...' })
     try {
       if (!auth) throw new Error('Firebase Auth not configured')
-      await sendPasswordResetEmail(auth, email.trim())
+      await sendPasswordResetEmail(auth, cleanEmail)
       setStatus({ type: 'success', message: 'PASSWORD RESET LINK SENT TO YOUR EMAIL. CHECK SPAM/JUNK IF NOT IN INBOX.' })
     } catch (err) {
       setStatus({ type: 'error', message: err?.message || 'FAILED TO SEND RESET LINK' })
@@ -41,14 +47,20 @@ export default function AuthPage() {
   }
 
   async function onSubmit(e) {
-    e.preventDefault()
+    if (e && typeof e.preventDefault === 'function') e.preventDefault()
+    const cleanEmail = sanitizeString(email)
+    const cleanPassword = sanitizeString(password)
+    if (!cleanEmail || !cleanPassword) {
+      setStatus({ type: 'error', message: 'PLEASE ENTER VALID CREDENTIALS' })
+      return
+    }
     setStatus({ type: 'loading', message: isSignUp ? 'CREATING ACCOUNT...' : 'LOGGING IN...', code: '' })
     try {
       if (!auth) throw new Error('Firebase Auth not configured')
       if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email.trim(), password)
+        await createUserWithEmailAndPassword(auth, cleanEmail, cleanPassword)
       } else {
-        await signInWithEmailAndPassword(auth, email.trim(), password)
+        await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword)
       }
     } catch (err) {
       let friendlyMessage = err?.message || 'AUTHENTICATION FAILED'

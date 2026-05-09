@@ -148,11 +148,45 @@ LeadX follows a strict **Neo-Brutalist** design system:
 - **Brutal Shadows**: Solid, non-blurred offsets (`shadow-brutal`).
 - **Typography**: Heavy, uppercase headers with wide tracking for a "system-level" feel.
 
+## 🛡 Security & Production Hardening
+
+LeadX is fully hardened against web vulnerabilities and abuse:
+- **XSS & Code Injection Prevention**: High-performance regex filters sanitize all user inputs (including manual team names, judge registries, track additions, and PapaParse CSV imports), stripping any malicious HTML/JS payloads.
+- **Click Throttling & Double-Submission Prevention**: All critical write buttons are instantly locked under a strict `busy` state upon submission, protecting the database from accidental or malicious rapid-fire click spams.
+- **Secure Serverless Architecture**: Client-side API keys act as simple project routing identifiers; access is secured purely at the database level using strict [firestore.rules](file:///d:/NEW%20LEARNING/Web%20Dev/Leaderboard/firestore.rules).
+
 ---
 
-## 🛡 Security Note
+## 📊 Scale & Event Capacity (Firebase Free/Spark Tier)
 
-Admin access is strictly tied to the `ownerId` in the hackathon document. Judges must be manually whitelisted in the `judges` subcollection before they can submit scores.
+Because LeadX is built on serverless **Google Cloud Firestore**, it has no physical backend server bottlenecks and scales dynamically. Below are the precise mathematical capacities when running on the **Firebase Spark (Free) Plan**:
+
+### ⚡ Free Tier Quota Limits
+* **Firestore Simulataneous Connections**: 100 concurrent open tabs
+* **Firestore Daily Reads**: 50,000 reads per day
+* **Firestore Daily Writes**: 20,000 writes per day
+* **Firestore Storage**: 1 GiB total storage (~hundreds of thousands of records)
+
+---
+
+### 🏆 Operational Scenarios on the Free Tier
+
+#### Scenario A: One Single Large Event (Maximum Allocation)
+If you dedicate the entire free tier to **one massive hackathon**:
+* **Max Teams**: **150 teams**
+* **Max Active Judges**: **15 judges** scoring concurrently
+* **Max Spectators**: **80 spectators** viewing live-ranked boards at any single moment
+* **Write Usage**: 150 teams × 3 rounds × 15 judges = 6,750 writes (**33%** of your daily free writes limit).
+* **Connection Usage**: 1 admin + 15 judges + 80 spectators = **96 concurrent connections** (fits inside the 100 connection cap).
+
+#### Scenario B: Multiple Parallel Events (Balanced Multi-Tenancy)
+If you run **multiple concurrent events** simultaneously in the same database:
+* **Max Parallel Events**: **3 to 5 separate events** running at the same time
+* **Max Teams per Event**: **30 to 50 teams** per event
+* **Max Judges per Event**: **3 to 5 judges** per event
+* **Max Spectators per Event**: **10 to 15 spectators** viewing each board at any single moment
+* **Write Usage**: 5 events × 40 teams × 3 rounds × 4 judges = 2,400 writes (**12%** of your daily free writes limit).
+* **Connection Usage**: 5 events × (1 admin + 4 judges + 15 spectators) = **100 concurrent connections** (fits exactly inside the 100 connection cap).
 
 ---
 

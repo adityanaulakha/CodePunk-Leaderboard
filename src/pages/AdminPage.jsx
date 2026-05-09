@@ -10,6 +10,7 @@ import useTeamsRealtime from '../hooks/useTeamsRealtime.js'
 import { auth, db, firebaseEnabled } from '../lib/firebase.js'
 import { addTeam, bulkImportTeams, deleteTeam, deleteAllTeams, resetBonusScores, resetRoundScores, updateTeamScores, updateRoundNames, setLeaderboardFrozen, triggerCelebration, renameRound, updateTeamTrack, updateTeamBonuses, updateRubrics, updateBonusNames, renameBonus, toggleRoundLock, updateTracks, deleteTeamsInTrack } from '../lib/teams.js'
 import { addJudge, removeJudge, submitScore, updateJudgeName } from '../lib/judges.js'
+import { sanitizeString, sanitizeAlphanumeric } from '../utils/sanitize.js'
 
 const MotionDiv = motion.div
 
@@ -153,8 +154,9 @@ export default function AdminPage() {
 
   const handleAdd = wrapAsync(async (e) => {
     e.preventDefault()
-    if (!addForm.name.trim()) return
-    await addTeam(hackathonId, { name: addForm.name, track: addForm.track, scores: {} })
+    const cleanName = sanitizeString(addForm.name)
+    if (!cleanName) return
+    await addTeam(hackathonId, { name: cleanName, track: addForm.track, scores: {} })
     setAddForm({ name: '', track: tracks[0]?.id || '' })
     setToast({ type: 'success', message: 'Team added' })
   })
@@ -208,8 +210,10 @@ export default function AdminPage() {
   // JUDGE OPERATIONS //
   const handleAddJudge = wrapAsync(async (e) => {
     e.preventDefault()
-    if (!addJudgeForm.uid.trim() || !addJudgeForm.name.trim()) return
-    await addJudge(hackathonId, addJudgeForm.uid.trim(), addJudgeForm.name.trim())
+    const cleanUid = sanitizeAlphanumeric(addJudgeForm.uid)
+    const cleanName = sanitizeString(addJudgeForm.name)
+    if (!cleanUid || !cleanName) return
+    await addJudge(hackathonId, cleanUid, cleanName)
     setAddJudgeForm({ uid: '', name: '' })
     setToast({ type: 'success', message: 'Judge added successfully' })
   })
@@ -264,13 +268,14 @@ export default function AdminPage() {
 
   const handleAddTrack = wrapAsync(async (e) => {
     e.preventDefault()
-    if (!newTrackName.trim()) return
-    const id = newTrackName.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')
+    const cleanName = sanitizeString(newTrackName)
+    if (!cleanName) return
+    const id = cleanName.toLowerCase().replace(/[^a-z0-9]/g, '-')
     if (tracks.find(t => t.id === id)) {
       setToast({ type: 'error', message: 'A track with a similar name already exists.' })
       return
     }
-    await updateTracks(hackathonId, [...tracks, { id, name: newTrackName.trim() }])
+    await updateTracks(hackathonId, [...tracks, { id, name: cleanName }])
     setNewTrackName('')
     setToast({ type: 'success', message: 'Track added' })
   })
@@ -439,13 +444,14 @@ export default function AdminPage() {
       complete: (res) => {
         const raw = Array.isArray(res.data) ? res.data : []
         const rows = raw.map(r => {
-           const name = r.name ?? r.team ?? r.teamName ?? r['Team Name'] ?? ''
+           const rawName = r.name ?? r.team ?? r.teamName ?? r['Team Name'] ?? ''
+           const name = sanitizeString(rawName)
            const scores = {}
            for (const [k, v] of Object.entries(r)) {
              if (!['name', 'team', 'teamName', 'Team Name'].includes(k)) scores[k] = num(v)
            }
            return { name, scores }
-        }).filter(r => String(r.name).trim())
+        }).filter(r => r.name)
         setCsvState(s => ({ ...s, parsedRows: rows, error: '' }))
       },
       error: (err) => setCsvState(s => ({ ...s, error: err?.message || 'Failed to parse' })),

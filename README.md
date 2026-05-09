@@ -1,4 +1,4 @@
-# LeadX v2.0 // The Premium Scoring Protocol
+# LeadX: The Premium Scoring Protocol
 
 [![Vercel Deployment](https://img.shields.io/badge/Deploy-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com)
 [![React](https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react)](https://react.dev)

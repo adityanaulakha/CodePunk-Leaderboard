@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { auth } from '../lib/firebase.js'
 import { signOut } from 'firebase/auth'
@@ -8,6 +8,15 @@ export default function LandingPage() {
   const [user, setUser] = useState(undefined)
   const [isScrolled, setIsScrolled] = useState(false)
   const [activeTab, setActiveTab] = useState('design') // For interactive Rubrics widget
+  const [eventCode, setEventCode] = useState('')
+  const navigate = useNavigate()
+
+  const handleFindLeaderboard = (e) => {
+    e.preventDefault()
+    if (!eventCode.trim()) return
+    const formattedId = eventCode.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')
+    navigate(`/${formattedId}`)
+  }
   
   useEffect(() => {
     if (!auth) return undefined
@@ -194,6 +203,28 @@ export default function LandingPage() {
             >
               JUDGE PORTAL
             </Link>
+          </motion.div>
+
+          {/* Find Live Leaderboard Search Block */}
+          <motion.div 
+            variants={fadeUp} 
+            className="mt-12 w-full max-w-xl px-4 z-10"
+          >
+            <form onSubmit={handleFindLeaderboard} className="flex border-4 border-neo-black bg-white shadow-[6px_6px_0_#FFD600] hover:-translate-y-1 hover:shadow-[8px_8px_0_#FFD600] transition-all relative group rounded-none">
+              <input 
+                type="text" 
+                value={eventCode}
+                onChange={(e) => setEventCode(e.target.value)}
+                placeholder="ENTER EVENT CODE (e.g. code-punk)" 
+                className="flex-1 px-5 py-4 font-black text-neo-black placeholder-zinc-500 uppercase tracking-wider outline-none text-sm sm:text-base border-r-4 border-neo-black bg-white rounded-none"
+              />
+              <button 
+                type="submit" 
+                className="bg-neo-yellow px-6 py-4 font-hero text-lg uppercase tracking-widest text-neo-black hover:bg-neo-black hover:text-white transition-colors cursor-pointer flex items-center gap-2 rounded-none border-0"
+              >
+                FIND ⚡
+              </button>
+            </form>
           </motion.div>
         </motion.div>
 

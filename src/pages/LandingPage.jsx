@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { auth } from '../lib/firebase.js'
 import { signOut } from 'firebase/auth'
@@ -8,6 +8,15 @@ export default function LandingPage() {
   const [user, setUser] = useState(undefined)
   const [isScrolled, setIsScrolled] = useState(false)
   const [activeTab, setActiveTab] = useState('design') // For interactive Rubrics widget
+  const [eventCode, setEventCode] = useState('')
+  const navigate = useNavigate()
+
+  const handleFindLeaderboard = (e) => {
+    e.preventDefault()
+    if (!eventCode.trim()) return
+    const formattedId = eventCode.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')
+    navigate(`/${formattedId}`)
+  }
   
   useEffect(() => {
     if (!auth) return undefined
@@ -194,6 +203,28 @@ export default function LandingPage() {
             >
               JUDGE PORTAL
             </Link>
+          </motion.div>
+
+          {/* Find Live Leaderboard Search Block */}
+          <motion.div 
+            variants={fadeUp} 
+            className="mt-12 w-full max-w-xl px-4 z-10"
+          >
+            <form onSubmit={handleFindLeaderboard} className="flex border-4 border-neo-black bg-white shadow-[6px_6px_0_#FFD600] hover:-translate-y-1 hover:shadow-[8px_8px_0_#FFD600] transition-all relative group rounded-none">
+              <input 
+                type="text" 
+                value={eventCode}
+                onChange={(e) => setEventCode(e.target.value)}
+                placeholder="ENTER EVENT CODE (e.g. code-punk)" 
+                className="flex-1 px-5 py-4 font-black text-neo-black placeholder-zinc-500 uppercase tracking-wider outline-none text-sm sm:text-base border-r-4 border-neo-black bg-white rounded-none"
+              />
+              <button 
+                type="submit" 
+                className="bg-neo-yellow px-6 py-4 font-hero text-lg uppercase tracking-widest text-neo-black hover:bg-neo-black hover:text-white transition-colors cursor-pointer flex items-center gap-2 rounded-none border-0"
+              >
+                FIND ⚡
+              </button>
+            </form>
           </motion.div>
         </motion.div>
 
@@ -406,36 +437,73 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 relative z-10">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-20">
             <h2 className="font-hero text-5xl sm:text-7xl uppercase text-neo-white drop-shadow-[4px_4px_0_#FFD600]">OPERATING MODEL</h2>
-            <p className="mt-4 font-bold uppercase tracking-widest text-gray-400">FROM INGESTION TO THE GRAND CHAMPION REVEAL.</p>
+            <p className="mt-4 font-bold uppercase tracking-widest text-gray-400">ENGINEERED CONSOLES FOR COMPREHENSIVE TOURNAMENT MANAGEMENT</p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            {/* Connection Lines (Desktop Only) */}
-            <div className="hidden md:block absolute top-1/2 left-[15%] right-[15%] h-1 bg-white border-2 border-neo-black -translate-y-12 z-0"></div>
-            
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 relative">
             {[
-              { step: 1, title: "DATA INGESTION", desc: "Upload teams via custom CSV, configure rubrics parameters, and assign specific event tracks instantly." },
-              { step: 2, title: "JUDGING FLOW", desc: "Judges log in securely via mobile/desktop portals and input scores with instant live calculations." },
-              { step: 3, title: "SUSPENSE CLIMAX", desc: "Freeze the board for final scoring, then hit unlock to reveal the global winners on the big screen." }
-            ].map((s, index) => (
+              {
+                step: "01",
+                phase: "MY EVENTS HUB",
+                title: "YOUR HOME BASE",
+                desc: "Your friendly central dashboard. See all your active and past contests at a glance, create new events in seconds, and quickly jump to your event control room or judge pages with simple links.",
+                features: ["All Your Events Listed", "Friendly Event Links", "Simple New Event Setup", "Easy Password Updates"]
+              },
+              {
+                step: "02",
+                phase: "EVENT CONTROL ROOM",
+                title: "EASY CUSTOMIZATION",
+                desc: "Design your event exactly how you want it with zero coding! Create custom categories (like Art, Coding, or Pitch), set up scoring rounds, add your judges, and choose easy grading rules.",
+                features: ["Custom Categories", "Grading Rules (Rubrics)", "Rounds & Bonus Points", "Add Unlimited Judges"]
+              },
+              {
+                step: "03",
+                phase: "JUDGING SCREEN",
+                title: "TAP TO GRADE ON PHONES",
+                desc: "A super clean screen designed for your judges. They can log in on any phone or tablet, see your simple grading questions, tap to score, and watch the scores calculate instantly.",
+                features: ["Works on Any Phone", "Simple Tap Grading", "Instant Scoring Averages", "Safe & Secure Logins"]
+              },
+              {
+                step: "04",
+                phase: "LIVE LEADERBOARD",
+                title: "SPECTATOR SHOWCASE",
+                desc: "A beautiful, real-time board for your audience. Filter by categories, freeze the board near the end to keep the final winners a surprise, and tap a button to trigger screen-wide confetti!",
+                features: ["Real-Time Score Updates", "Secret Climax (Freeze)", "Confetti Celebrations", "Animated Podium Views"]
+              },
+              {
+                step: "05",
+                phase: "FAST CODES",
+                title: "INSTANT SPECTATOR ENTRY",
+                desc: "No complicated links needed. Audience members and contestants can simply type your custom event code right on the homepage to open your live scoreboard or join as a grader.",
+                features: ["Type Code to Enter", "Instant Score Lookup", "QR-Code Friendly Routes", "Custom Friendly Names"]
+              }
+            ].map((card, idx) => (
               <motion.div 
-                key={s.step} 
+                key={card.step} 
                 initial="hidden" 
                 whileInView="visible" 
                 viewport={{ once: true }} 
                 variants={fadeUp} 
-                className="border-4 border-neo-black bg-white p-8 shadow-[8px_8px_0_#FFD600] text-neo-black flex flex-col justify-between group hover:-translate-y-2 hover:shadow-[12px_12px_0_#FFD600] transition-all duration-300 z-10 min-h-[320px]"
+                className="border-4 border-neo-black bg-white p-8 shadow-[8px_8px_0_#FFD600] text-neo-black flex flex-col justify-between group hover:-translate-y-2 hover:shadow-[12px_12px_0_#FFD600] transition-all duration-300 z-10 min-h-[380px]"
               >
                 <div>
                   <div className="flex justify-between items-center mb-6">
-                    <span className="font-hero text-5xl text-neo-yellow drop-shadow-[3px_3px_0_#111]">0{s.step}</span>
-                    <span className="font-mono text-xs font-black text-gray-400 uppercase tracking-widest">PHASE {s.step}</span>
+                    <span className="font-hero text-5xl text-neo-yellow drop-shadow-[3px_3px_0_#111]">{card.step}</span>
+                    <span className="font-mono text-xs font-black text-gray-400 uppercase tracking-widest">{card.phase}</span>
                   </div>
-                  <h3 className="font-hero text-2xl uppercase tracking-widest mb-4">{s.title}</h3>
-                  <p className="font-bold text-gray-600 uppercase tracking-wider text-sm leading-relaxed">{s.desc}</p>
+                  <h3 className="font-hero text-2xl uppercase tracking-widest mb-4">{card.title}</h3>
+                  <p className="font-bold text-gray-600 uppercase tracking-wider text-xs leading-relaxed mb-6">{card.desc}</p>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    {card.features.map((f, i) => (
+                      <span key={i} className="bg-neo-lightgray border-2 border-neo-black px-2 py-1 font-black text-[10px] uppercase tracking-wider text-neo-black">
+                        ⚡ {f}
+                      </span>
+                    ))}
+                  </div>
                 </div>
                 <div className="mt-8 border-t-2 border-neo-black pt-4 font-black text-xs uppercase tracking-widest text-neo-black flex items-center gap-2">
-                  <span>DEPLOY NOW</span> &rarr;
+                  <span>EXPLORE CONSOLE</span> &rarr;
                 </div>
               </motion.div>
             ))}

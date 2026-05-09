@@ -96,6 +96,43 @@ export default function AdminPage() {
   const [busy, setBusy] = useState(false)
   const [toast, setToast] = useState(null)
   const [csvState, setCsvState] = useState({ fileName: '', parsedRows: [], error: '', added: null })
+  const [modal, setModal] = useState(null)
+
+  const customConfirm = (message) => {
+    return new Promise((resolve) => {
+      setModal({
+        title: "CONFIRM ACTION",
+        message,
+        type: "confirm",
+        onConfirm: () => resolve(true),
+        onCancel: () => resolve(false)
+      });
+    });
+  };
+
+  const customPrompt = (message, defaultValue = "") => {
+    return new Promise((resolve) => {
+      setModal({
+        title: "ENTER VALUE",
+        message,
+        type: "prompt",
+        defaultValue,
+        onConfirm: (val) => resolve(val),
+        onCancel: () => resolve(null)
+      });
+    });
+  };
+
+  const customAlert = (message) => {
+    return new Promise((resolve) => {
+      setModal({
+        title: "ALERT",
+        message,
+        type: "alert",
+        onConfirm: () => resolve(true)
+      });
+    });
+  };
 
   // Bonuses
   const [editById, setEditById] = useState(() => new Map())
@@ -201,7 +238,7 @@ export default function AdminPage() {
   })
 
   const handleDeleteRubricElement = wrapAsync(async (id) => {
-    if (!window.confirm("Remove this parameter? Existing scores tied to parameter IDs will remain in DB but be hidden.")) return
+    if (!(await customConfirm("Remove this parameter? Existing scores tied to parameter IDs will remain in DB but be hidden."))) return
     const updated = currentRubricDef.filter(x => x.id !== id)
     await updateRubrics(hackathonId, { ...rubrics, [activeRubricKey]: updated })
     setToast({ type: 'success', message: 'Removed criterion' })
@@ -219,21 +256,21 @@ export default function AdminPage() {
   })
 
   const handleDeleteJudge = wrapAsync(async (jid, jname) => {
-    if (!window.confirm(`Delete Judge "${jname}"? This removes them from active averages, drastically shifting current score totals! Proceed with caution.`)) return
+    if (!(await customConfirm(`Delete Judge "${jname}"? This removes them from active averages, drastically shifting current score totals! Proceed with caution.`))) return
     await removeJudge(hackathonId, jid)
     setToast({ type: 'success', message: 'Judge completely removed & teams recalculated.' })
   })
 
   const handleDelete = wrapAsync(async (teamId, name) => {
-    if (!window.confirm(`Delete team "${name}"?`)) return
+    if (!(await customConfirm(`Delete team "${name}"?`))) return
     await deleteTeam(hackathonId, teamId)
     setToast({ type: 'success', message: 'Team deleted' })
   })
 
   const handleDeleteAllTeams = wrapAsync(async () => {
-    const confirm1 = window.confirm("WARNING: Are you sure you want to delete ALL teams? This cannot be undone.")
+    const confirm1 = await customConfirm("WARNING: Are you sure you want to delete ALL teams? This cannot be undone.")
     if (!confirm1) return
-    const confirm2 = window.prompt("Type 'DELETE ALL' to confirm:")
+    const confirm2 = await customPrompt("Type 'DELETE ALL' to confirm:")
     if (confirm2 !== "DELETE ALL") {
        setToast({ type: 'error', message: 'Mass deletion cancelled' })
        return
@@ -243,9 +280,9 @@ export default function AdminPage() {
   })
 
   const handleResetRoundScores = wrapAsync(async () => {
-    const confirm1 = window.confirm(`WARNING: Are you sure you want to completely clear ALL MAIN ROUND SCORES for the ${roundManageTrack.toUpperCase()} track? This cannot be undone.`)
+    const confirm1 = await customConfirm(`WARNING: Are you sure you want to completely clear ALL MAIN ROUND SCORES for the ${roundManageTrack.toUpperCase()} track? This cannot be undone.`)
     if (!confirm1) return
-    const confirm2 = window.prompt("Type 'RESET SCORES' to confirm:")
+    const confirm2 = await customPrompt("Type 'RESET SCORES' to confirm:")
     if (confirm2 !== "RESET SCORES") {
        setToast({ type: 'error', message: 'Score reset cancelled' })
        return
@@ -255,9 +292,9 @@ export default function AdminPage() {
   })
 
   const handleResetBonusScores = wrapAsync(async () => {
-    const confirm1 = window.confirm(`WARNING: Are you sure you want to completely clear ALL BONUS SCORES for the ${bonusManageTrack.toUpperCase()} track? This cannot be undone.`)
+    const confirm1 = await customConfirm(`WARNING: Are you sure you want to completely clear ALL BONUS SCORES for the ${bonusManageTrack.toUpperCase()} track? This cannot be undone.`)
     if (!confirm1) return
-    const confirm2 = window.prompt("Type 'RESET BONUSES' to confirm:")
+    const confirm2 = await customPrompt("Type 'RESET BONUSES' to confirm:")
     if (confirm2 !== "RESET BONUSES") {
        setToast({ type: 'error', message: 'Bonus reset cancelled' })
        return
@@ -286,10 +323,10 @@ export default function AdminPage() {
       return
     }
 
-    const confirm1 = window.confirm(`DANGER: Delete track "${name}"? \n\nThis will: \n1. Download all team data for this track as a CSV backup. \n2. PERMANENTLY delete all teams assigned to this track from the database. \n3. Remove the track itself. \n\nProceed?`)
+    const confirm1 = await customConfirm(`DANGER: Delete track "${name}"? \n\nThis will: \n1. Download all team data for this track as a CSV backup. \n2. PERMANENTLY delete all teams assigned to this track from the database. \n3. Remove the track itself. \n\nProceed?`)
     if (!confirm1) return
 
-    const confirm2 = window.prompt(`FINAL CONFIRMATION: Type the track name "${name}" to confirm permanent deletion:`)
+    const confirm2 = await customPrompt(`FINAL CONFIRMATION: Type the track name "${name}" to confirm permanent deletion:`)
     if (confirm2 !== name) {
       setToast({ type: 'error', message: 'Track deletion cancelled: Name mismatch' })
       return
@@ -351,13 +388,13 @@ export default function AdminPage() {
   })
 
   const handleDeleteRound = wrapAsync(async (rname) => {
-    if (!window.confirm(`Delete round column "${rname}" from ${roundManageTrack.toUpperCase()}? (Scores will remain in DB but be hidden)`)) return
+    if (!(await customConfirm(`Delete round column "${rname}" from ${roundManageTrack.toUpperCase()}? (Scores will remain in DB but be hidden)`))) return
     await updateRoundNames(hackathonId, roundManageTrack, activeRoundNames.filter(r => r !== rname))
     setToast({ type: 'success', message: 'Round deleted' })
   })
 
   const handleRenameRound = wrapAsync(async (oldName) => {
-    const newName = window.prompt(`Rename "${oldName}" to:`, oldName)
+    const newName = await customPrompt(`Rename "${oldName}" to:`, oldName)
     if (!newName || newName.trim() === '' || newName === oldName) return
     if (activeRoundNames.includes(newName.trim())) {
        setToast({ type: 'error', message: 'A round with that name already exists' })
@@ -389,7 +426,7 @@ export default function AdminPage() {
   })
 
   const handleDeleteBonus = wrapAsync(async (bname) => {
-    if (!window.confirm(`Delete bonus column "${bname}" from ${bonusManageTrack.toUpperCase()}?`)) return
+    if (!(await customConfirm(`Delete bonus column "${bname}" from ${bonusManageTrack.toUpperCase()}?`))) return
     await updateBonusNames(hackathonId, bonusManageTrack, activeBonusNames.filter(b => b !== bname))
     setToast({ type: 'success', message: 'Bonus deleted' })
   })
@@ -431,7 +468,7 @@ export default function AdminPage() {
   })
 
   const handleCelebrate = wrapAsync(async () => {
-    if (!window.confirm("Trigger celebration on all public screens? This will also unfreeze the board.")) return
+    if (!(await customConfirm("Trigger celebration on all public screens? This will also unfreeze the board."))) return
     await triggerCelebration(hackathonId)
     setToast({ type: 'success', message: 'Celebration Triggered!' })
   })
@@ -541,7 +578,7 @@ export default function AdminPage() {
             <button 
               onClick={handleCelebrate}
               disabled={busy}
-              className="font-hero text-2xl tracking-widest uppercase px-10 py-3 border-4 border-neo-black bg-neo-yellow text-neo-white shadow-[6px_6px_0_#FF00A0] transition-all hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[8px_8px_0_#FF00A0] relative z-10"
+              className="font-hero text-2xl tracking-widest uppercase px-10 py-3 border-4 border-neo-black bg-neo-yellow text-neo-black shadow-[6px_6px_0_#FF00A0] transition-all hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[8px_8px_0_#FF00A0] relative z-10"
             >
               🎉 REVEAL & CELEBRATE
             </button>
@@ -583,7 +620,7 @@ export default function AdminPage() {
                 <div className="relative z-10 mb-12 border-b-4 border-neo-black pb-10">
                   <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-6 mb-6">
                     <div>
-                      <h2 className="font-hero text-5xl uppercase text-neo-black drop-shadow-[3px_3px_0_#111]">Manage Bonus Types</h2>
+                      <h2 className="font-mono font-black text-5xl uppercase text-neo-black" style={{ textShadow: "3px 3px 0px #FFD600" }}>Manage Bonus Types</h2>
                       <p className="text-neo-black font-bold tracking-widest uppercase text-sm mt-2">Configure extra score columns</p>
                     </div>
                     <div className="flex gap-4 items-center flex-wrap">
@@ -635,7 +672,7 @@ export default function AdminPage() {
 
                 <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b-4 border-neo-black pb-6">
                   <div>
-                    <h2 className="font-hero text-5xl uppercase text-neo-black drop-shadow-[3px_3px_0_#111]">Assign Values</h2>
+                    <h2 className="font-mono font-black text-5xl uppercase text-neo-black" style={{ textShadow: "3px 3px 0px #FFD600" }}>Assign Values</h2>
                     <p className="text-neo-black font-bold tracking-widest uppercase text-sm mt-2">Inject external bonuses per team</p>
                   </div>
                   
@@ -712,7 +749,7 @@ export default function AdminPage() {
                 <div className="absolute top-0 right-0 w-32 h-32 bg-neo-yellow/10 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b-4 border-neo-black pb-6 mb-8">
                   <div>
-                    <h2 className="font-hero text-5xl uppercase text-neo-black drop-shadow-[3px_3px_0_#111]">Scoring Rubrics</h2>
+                    <h2 className="font-mono font-black text-5xl uppercase text-neo-black" style={{ textShadow: "3px 3px 0px #FFD600" }}>Scoring Rubrics</h2>
                     <p className="text-neo-black font-bold tracking-widest uppercase text-sm mt-2">Dynamic criteria builder for Judges</p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4">
@@ -821,7 +858,7 @@ export default function AdminPage() {
                   </div>
 
                   <div className="border-4 border-neo-black bg-white/90 backdrop-blur-md p-6 lg:p-8 shadow-[8px_8px_0_#111]">
-                    <h3 className="font-hero text-5xl uppercase text-neo-black drop-shadow-[3px_3px_0_#111] mb-8">Active Panel</h3>
+                    <h3 className="font-mono font-black text-5xl uppercase text-neo-black mb-8" style={{ textShadow: "3px 3px 0px #FFD600" }}>Active Panel</h3>
                     <div className="space-y-4">
                       {judgesList.map(j => (
                         <div key={j.id} className="flex items-center justify-between p-4 border-4 border-neo-black bg-neo-white shadow-brutal gap-4 group hover:border-neo-black transition-colors">
@@ -829,7 +866,7 @@ export default function AdminPage() {
                             <span className="text-neo-black font-hero text-3xl uppercase tracking-wider block">{j.name}</span>
                             <span className="text-gray-500 font-bold text-xs font-mono uppercase tracking-widest mt-1 flex items-center gap-2">
                               ID: {j.id}
-                              <button onClick={() => { navigator.clipboard.writeText(j.id); alert('Copied UID: ' + j.id) }} title="Copy UID" className="hover:text-neo-black transition-colors active:scale-95">
+                              <button onClick={() => { navigator.clipboard.writeText(j.id); customAlert('Copied UID: ' + j.id) }} title="Copy UID" className="hover:text-neo-black transition-colors active:scale-95">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                               </button>
                             </span>
@@ -909,7 +946,7 @@ export default function AdminPage() {
                 {/* CURRENT TEAMS LIST */}
                 <div className="border-4 border-neo-black bg-white/90 backdrop-blur-md p-6 lg:p-8 shadow-[8px_8px_0_#111]">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                    <h3 className="font-hero text-5xl uppercase text-neo-black drop-shadow-[3px_3px_0_#111]">Team Roster</h3>
+                    <h3 className="font-mono font-black text-5xl uppercase text-neo-black" style={{ textShadow: "3px 3px 0px #FFD600" }}>Team Roster</h3>
                     <div className="flex items-center gap-4 w-full md:w-auto">
                       <input
                         type="text"
@@ -968,7 +1005,7 @@ export default function AdminPage() {
                   <div className="mb-12 border-b-4 border-neo-black pb-8">
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-6">
                       <div>
-                        <h2 className="font-hero text-5xl uppercase text-neo-black drop-shadow-[3px_3px_0_#111]">Event Tracks</h2>
+                        <h2 className="font-mono font-black text-5xl uppercase text-neo-black" style={{ textShadow: "3px 3px 0px #FFD600" }}>Event Tracks</h2>
                         <p className="text-neo-black font-bold tracking-widest uppercase text-sm mt-2">Create custom competitive tracks</p>
                       </div>
                     </div>
@@ -989,7 +1026,7 @@ export default function AdminPage() {
 
                   <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b-4 border-neo-black pb-6 mb-8">
                     <div>
-                      <h2 className="font-hero text-5xl uppercase text-neo-black drop-shadow-[3px_3px_0_#111]">Column Structure</h2>
+                      <h2 className="font-mono font-black text-5xl uppercase text-neo-black" style={{ textShadow: "3px 3px 0px #FFD600" }}>Column Structure</h2>
                       <p className="text-neo-black font-bold tracking-widest uppercase text-sm mt-2">Manage scoring factors</p>
                     </div>
                     <div className="flex gap-4 items-center flex-wrap">
@@ -1100,7 +1137,7 @@ export default function AdminPage() {
                   {/* Header */}
                   <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6 p-6 lg:p-8 border-b-4 border-neo-black">
                     <div>
-                      <h2 className="font-hero text-5xl uppercase text-neo-black drop-shadow-[3px_3px_0_#111]">Score Viewer</h2>
+                      <h2 className="font-mono font-black text-5xl uppercase text-neo-black" style={{ textShadow: "3px 3px 0px #FFD600" }}>Score Viewer</h2>
                       <p className="text-neo-black font-bold tracking-widest uppercase text-sm mt-2">Read-only backup view of all teams and direct scores</p>
                     </div>
                     <div className="flex gap-4 items-center">
@@ -1233,6 +1270,50 @@ export default function AdminPage() {
         {toast && (
           <div className={`fixed bottom-6 right-6 z-50 border-4 px-6 py-4 font-bold shadow-brutal ${toast.type==='error'?'bg-neo-red':'bg-neo-yellow text-neo-white'}`}>
             {toast.message}
+          </div>
+        )}
+        {modal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neo-black/80 backdrop-blur-sm">
+            <div className="border-4 border-neo-black bg-white p-8 shadow-[12px_12px_0_#FFD600] w-full max-w-lg relative">
+              <h3 className="font-hero text-4xl uppercase text-neo-black mb-4">{modal.title}</h3>
+              <p className="text-gray-600 font-bold mb-6 uppercase tracking-wider text-sm whitespace-pre-line">{modal.message}</p>
+              
+              {modal.type === 'prompt' && (
+                <div className="flex flex-col gap-2 mb-6">
+                  <input 
+                    type="text"
+                    id="modalInput"
+                    defaultValue={modal.defaultValue || ''}
+                    className="w-full border-4 border-neo-black bg-neo-white px-4 py-3 font-black text-lg outline-none focus:bg-white"
+                    autoFocus
+                  />
+                </div>
+              )}
+
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => {
+                    const val = document.getElementById('modalInput')?.value;
+                    modal.onConfirm(val);
+                    setModal(null);
+                  }}
+                  className="flex-1 bg-neo-black text-white border-4 border-neo-black py-3 font-hero text-xl uppercase tracking-widest hover:bg-neo-yellow hover:text-neo-black transition-colors cursor-pointer"
+                >
+                  CONFIRM ⚡
+                </button>
+                {modal.type !== 'alert' && (
+                  <button 
+                    onClick={() => {
+                      if (modal.onCancel) modal.onCancel();
+                      setModal(null);
+                    }}
+                    className="flex-1 bg-white text-neo-black border-4 border-neo-black py-3 font-hero text-xl uppercase tracking-widest hover:bg-neo-lightgray transition-colors cursor-pointer"
+                  >
+                    CANCEL
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </MotionDiv>

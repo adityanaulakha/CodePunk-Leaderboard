@@ -7,6 +7,8 @@ import useTeamsRealtime from '../hooks/useTeamsRealtime.js'
 import { auth, firebaseEnabled } from '../lib/firebase.js'
 import { useAuthState, useRoles } from './AdminPage.jsx'
 import { submitScoresBatch } from '../lib/judges.js'
+import SoundToggleButton from '../components/SoundToggleButton.jsx'
+import { playSaveSound, playSuccessChime } from '../lib/sounds.js'
 
 const MotionDiv = motion.div
 
@@ -29,6 +31,14 @@ export default function JudgePage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [toast, setToast] = useState(null)
   const [busyMap, setBusyMap] = useState(new Map())
+
+  // Automatically clear toast messages after 3 seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [toast])
 
   useEffect(() => {
     if (user === null) {
@@ -92,6 +102,7 @@ export default function JudgePage() {
       
       if (Object.keys(batchPayload).length > 0) {
         await submitScoresBatch(hackathonId, teamId, batchPayload, uid)
+        playSaveSound()
         setToast({ type: 'success', message: 'Team Scores Saved!' })
       } else {
         setToast({ type: 'success', message: 'No changes to save.' })
@@ -124,7 +135,7 @@ export default function JudgePage() {
             {user && (
               <span className="font-black uppercase text-xs tracking-[0.2em] bg-white border-4 border-neo-black px-4 py-2 shadow-brutal hidden md:flex items-center gap-2 h-12">
                 ID: {user.uid.slice(0, 6)}...
-                <button onClick={() => { navigator.clipboard.writeText(user.uid); alert('Copied UID: ' + user.uid) }} title="Copy Full UID" className="hover:text-zinc-500 transition-colors active:scale-95">
+                <button onClick={() => { navigator.clipboard.writeText(user.uid); playSuccessChime(); setToast({ type: 'success', message: 'UID copied to clipboard!' }) }} title="Copy Full UID" className="hover:text-zinc-500 transition-colors active:scale-95">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                 </button>
               </span>
@@ -133,9 +144,12 @@ export default function JudgePage() {
               Public Leaderboard
             </Link>
             {user && (
-              <button onClick={() => signOut(auth)} className="font-black text-sm border-4 border-neo-black bg-neo-black px-6 py-3 uppercase tracking-widest text-neo-white shadow-[4px_4px_0_#FFD600] hover:-translate-y-1 transition-all h-12">
-                Sign Out
-              </button>
+              <>
+                <SoundToggleButton />
+                <button onClick={() => signOut(auth)} className="font-black text-sm border-4 border-neo-black bg-neo-black px-6 py-3 uppercase tracking-widest text-neo-white shadow-[4px_4px_0_#FFD600] hover:-translate-y-1 transition-all h-12">
+                  Sign Out
+                </button>
+              </>
             )}
           </div>
         </div>

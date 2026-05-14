@@ -64,18 +64,9 @@ export default function DashboardPage() {
       })
       
       await setDoc(doc(db, 'hackathons', slug, 'settings', CONFIG_DOC), {
-        tracks: [
-          { id: 'software', name: 'Software' },
-          { id: 'hardware', name: 'Hardware' }
-        ],
-        rounds: {
-          software: ['Round 1', 'Round 2', 'Final'],
-          hardware: ['Round 1', 'Round 2', 'Final']
-        },
-        bonuses: {
-          software: ['HackerRank', 'Riddle Bonus'],
-          hardware: []
-        },
+        tracks: [],
+        rounds: {},
+        bonuses: {},
         activeJudges: [],
         lockedRounds: [],
         rubrics: {},

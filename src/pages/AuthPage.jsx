@@ -107,6 +107,12 @@ export default function AuthPage() {
       console.error("Firebase Auth Popup Error:", err)
       if (err?.code === 'auth/popup-closed-by-user') {
         setStatus({ type: 'idle', message: '' })
+      } else if (err?.code === 'auth/unauthorized-domain') {
+        setStatus({
+          type: 'error',
+          message: 'UNAUTHORIZED DOMAIN! Add your current domain to Firebase Console -> Authentication -> Settings -> Authorized Domains.',
+          code: 'auth/unauthorized-domain'
+        })
       } else if (err?.code === 'auth/operation-not-allowed') {
         setStatus({ 
           type: 'error', 

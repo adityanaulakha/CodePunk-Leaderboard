@@ -9,7 +9,10 @@ import AuthPage from './pages/AuthPage.jsx'
 import DocsPage from './pages/DocsPage.jsx'
 import JudgingAssignmentsPage from './pages/JudgingAssignmentsPage.jsx'
 
+import useDashboardSFX from './hooks/useDashboardSFX.js'
+
 function App() {
+  useDashboardSFX()
   return (
     <div className="min-h-dvh bg-zinc-950 text-zinc-100">
       <Routes>

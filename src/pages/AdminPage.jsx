@@ -11,6 +11,9 @@ import { auth, db, firebaseEnabled } from '../lib/firebase.js'
 import { addTeam, bulkImportTeams, deleteTeam, deleteAllTeams, resetBonusScores, resetRoundScores, updateTeamScores, updateRoundNames, setLeaderboardFrozen, triggerCelebration, renameRound, updateTeamTrack, updateTeamBonuses, updateRubrics, updateBonusNames, renameBonus, toggleRoundLock, updateTracks, deleteTeamsInTrack } from '../lib/teams.js'
 import { addJudge, removeJudge, submitScore, updateJudgeName } from '../lib/judges.js'
 import { sanitizeString, sanitizeAlphanumeric } from '../utils/sanitize.js'
+import SoundToggleButton from '../components/SoundToggleButton.jsx'
+import { playSuccessChime, playFanfare, playErrorSound } from '../lib/sounds.js'
+import { resolveHandleToUid } from '../lib/users.js'
 
 const MotionDiv = motion.div
 
@@ -156,6 +159,14 @@ export default function AdminPage() {
     }
   }, [tracks])
 
+  // Automatically clear toast messages after 3 seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [toast])
+
   const activeRubricKey = `${rubricTrack}_${rubricRound}`
   const currentRubricDef = rubrics?.[activeRubricKey] || []
 
@@ -194,6 +205,7 @@ export default function AdminPage() {
     const cleanName = sanitizeString(addForm.name)
     if (!cleanName) return
     await addTeam(hackathonId, { name: cleanName, track: addForm.track, scores: {} })
+    playSuccessChime()
     setAddForm({ name: '', track: tracks[0]?.id || '' })
     setToast({ type: 'success', message: 'Team added' })
   })
@@ -207,6 +219,7 @@ export default function AdminPage() {
     const values = editById.get(teamId)
     if (!values) return
     await updateTeamBonuses(hackathonId, teamId, values)
+    playSaveSound()
     setToast({ type: 'success', message: 'Bonuses updated' })
   })
 
@@ -217,6 +230,7 @@ export default function AdminPage() {
       if (values) promises.push(updateTeamBonuses(hackathonId, t.id, values))
     }
     await Promise.all(promises)
+    playFanfare()
     setToast({ type: 'success', message: 'All bonuses saved successfully!' })
   })
 
@@ -233,6 +247,7 @@ export default function AdminPage() {
     }
     const updated = [...currentRubricDef, newObj]
     await updateRubrics(hackathonId, { ...rubrics, [activeRubricKey]: updated })
+    playSuccessChime()
     setNewRubricRow({ label: '', max: '' })
     setToast({ type: 'success', message: 'Criterion added' })
   })
@@ -247,12 +262,23 @@ export default function AdminPage() {
   // JUDGE OPERATIONS //
   const handleAddJudge = wrapAsync(async (e) => {
     e.preventDefault()
-    const cleanUid = sanitizeAlphanumeric(addJudgeForm.uid)
+    const rawHandle = addJudgeForm.uid?.trim()
     const cleanName = sanitizeString(addJudgeForm.name)
-    if (!cleanUid || !cleanName) return
-    await addJudge(hackathonId, cleanUid, cleanName)
+    if (!rawHandle || !cleanName) return
+
+    setToast({ type: 'success', message: 'Resolving Social Handle namespace...' })
+    const resolvedUid = await resolveHandleToUid(rawHandle)
+
+    if (!resolvedUid) {
+      playErrorSound()
+      setToast({ type: 'error', message: `Social Handle "${rawHandle}" not established in database! Ask the evaluator to log in once to generate a profile.` })
+      return
+    }
+
+    await addJudge(hackathonId, resolvedUid, cleanName)
+    playSuccessChime()
     setAddJudgeForm({ uid: '', name: '' })
-    setToast({ type: 'success', message: 'Judge added successfully' })
+    setToast({ type: 'success', message: 'Judge authorized and appointed successfully!' })
   })
 
   const handleDeleteJudge = wrapAsync(async (jid, jname) => {
@@ -313,6 +339,7 @@ export default function AdminPage() {
       return
     }
     await updateTracks(hackathonId, [...tracks, { id, name: cleanName }])
+    playSuccessChime()
     setNewTrackName('')
     setToast({ type: 'success', message: 'Track added' })
   })
@@ -383,6 +410,7 @@ export default function AdminPage() {
     e.preventDefault()
     if (!newRoundName.trim() || activeRoundNames.includes(newRoundName.trim())) return
     await updateRoundNames(hackathonId, roundManageTrack, [...activeRoundNames, newRoundName.trim()])
+    playSuccessChime()
     setNewRoundName('')
     setToast({ type: 'success', message: 'Round column added' })
   })
@@ -421,6 +449,7 @@ export default function AdminPage() {
     e.preventDefault()
     if (!newBonusName.trim() || activeBonusNames.includes(newBonusName.trim())) return
     await updateBonusNames(hackathonId, bonusManageTrack, [...activeBonusNames, newBonusName.trim()])
+    playSuccessChime()
     setNewBonusName('')
     setToast({ type: 'success', message: 'Bonus column added' })
   })
@@ -464,12 +493,14 @@ export default function AdminPage() {
 
   const handleToggleFreeze = wrapAsync(async () => {
     await setLeaderboardFrozen(hackathonId, !isFrozen)
+    playSuccessChime()
     setToast({ type: 'success', message: !isFrozen ? 'Leaderboard is now FROZEN' : 'Leaderboard is now LIVE' })
   })
 
   const handleCelebrate = wrapAsync(async () => {
     if (!(await customConfirm("Trigger celebration on all public screens? This will also unfreeze the board."))) return
     await triggerCelebration(hackathonId)
+    playFanfare()
     setToast({ type: 'success', message: 'Celebration Triggered!' })
   })
 
@@ -498,6 +529,7 @@ export default function AdminPage() {
   const handleImportCsv = wrapAsync(async () => {
     const result = await bulkImportTeams(hackathonId, csvState.parsedRows)
     setCsvState((s) => ({ ...s, added: result.added }))
+    playFanfare()
     setToast({ type: 'success', message: `Imported ${result.added} teams` })
   })
 
@@ -524,7 +556,12 @@ export default function AdminPage() {
             <Link to="/dashboard" className="font-black text-sm border-4 border-neo-black bg-white px-6 py-3 uppercase tracking-widest text-neo-black shadow-[4px_4px_0_#111] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_#111] transition-all flex items-center gap-2">&larr; Dash</Link>
             {canUseAdmin && <Link to={`/${hackathonId}/podium`} className="font-black text-sm border-4 border-neo-black bg-white px-6 py-3 uppercase tracking-widest text-neo-black shadow-[4px_4px_0_#111] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_#111] transition-all">🏆 Podium</Link>}
             <Link to={`/${hackathonId}`} className="font-black text-sm border-4 border-neo-black bg-neo-yellow px-6 py-3 uppercase tracking-widest text-neo-black shadow-[4px_4px_0_#111] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_#111] transition-all">Public</Link>
-            {user && <button onClick={() => signOut(auth)} className="font-black text-sm border-4 border-neo-black bg-neo-black px-6 py-3 uppercase tracking-widest text-neo-white shadow-[4px_4px_0_#FFD600] hover:-translate-y-1 transition-all">Sign out</button>}
+            {user && (
+              <>
+                <SoundToggleButton />
+                <button onClick={() => signOut(auth)} className="font-black text-sm border-4 border-neo-black bg-neo-black px-6 py-3 uppercase tracking-widest text-neo-white shadow-[4px_4px_0_#FFD600] hover:-translate-y-1 transition-all">Sign out</button>
+              </>
+            )}
           </div>
         </div>
 
@@ -538,8 +575,17 @@ export default function AdminPage() {
               You are signed in, but your account has not been granted access to this event yet.
               If you are an <strong>Evaluator/Judge</strong>, please copy your unique system ID below and securely send it to the Event Organizer.
             </p>
-            <div className="p-4 bg-black border-4 border-neo-black font-mono text-xl text-neo-black break-all inline-block select-all cursor-text shadow-[4px_4px_0_#111]">
-              {user.uid}
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="p-4 bg-neo-black border-4 border-neo-black font-mono text-xl text-neo-yellow break-all select-all cursor-text shadow-[4px_4px_0_#111] flex-1 sm:flex-initial">
+                {user.uid}
+              </div>
+              <button 
+                onClick={() => { navigator.clipboard.writeText(user.uid); playSuccessChime(); setToast({ type: 'success', message: 'UID copied to clipboard!' }) }} 
+                className="h-full bg-neo-yellow text-neo-black font-black text-sm border-4 border-neo-black px-6 py-4 uppercase tracking-widest hover:-translate-y-1 shadow-[4px_4px_0_#111] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                COPY UID
+              </button>
             </div>
             <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">
               Refresh the page once the Organizer confirms your authorization.
@@ -588,6 +634,14 @@ export default function AdminPage() {
         {/* Tab Navigation */}
         {canUseAdmin && (
           <div className="mt-12">
+             {tracks.length === 0 && (
+               <div className="border-4 border-neo-black bg-neo-yellow p-6 shadow-brutal flex flex-col gap-2 mb-8">
+                 <div className="font-hero text-3xl uppercase text-neo-black drop-shadow-[1px_1px_0_#111]">🚀 GETTING STARTED</div>
+                 <p className="text-neo-black font-bold uppercase tracking-wider text-xs sm:text-sm">
+                   Welcome to your new Hackathon! Please navigate to the <strong>TRACKS & ROUNDS</strong> tab below and create your first track to enable team management and evaluation features.
+                 </p>
+               </div>
+             )}
              <div className="flex flex-wrap gap-4 mb-8 border-b-4 border-neo-black pb-4">
               {[
                 { id: 'bonuses', label: 'EDIT BONUSES' },
@@ -629,9 +683,13 @@ export default function AdminPage() {
                         onChange={e => setBonusManageTrack(e.target.value)} 
                         className="border-4 border-neo-black bg-neo-white px-6 py-3 font-hero text-2xl text-neo-black outline-none focus:border-white transition-colors cursor-pointer shadow-[4px_4px_0_#111]"
                       >
-                        {tracks.map(t => (
-                          <option key={t.id} value={t.id}>{t.name.toUpperCase()} BONUSES</option>
-                        ))}
+                        {tracks.length === 0 ? (
+                          <option value="">NO TRACKS</option>
+                        ) : (
+                          tracks.map(t => (
+                            <option key={t.id} value={t.id}>{t.name.toUpperCase()} BONUSES</option>
+                          ))
+                        )}
                       </select>
                       <button
                         onClick={handleResetBonusScores}
@@ -647,7 +705,7 @@ export default function AdminPage() {
                   <form onSubmit={handleAddBonus} className="flex flex-col sm:flex-row gap-4 max-w-4xl mx-auto bg-neo-white p-6 border-4 border-neo-black shadow-brutal relative mb-8">
                     <div className="absolute -top-4 left-4 bg-white px-2 font-black uppercase text-gray-500 tracking-widest text-xs">Add New Bonus</div>
                     <input value={newBonusName} onChange={e => setNewBonusName(e.target.value)} className="flex-1 border-b-4 border-neo-black bg-transparent p-3 font-hero text-3xl outline-none focus:border-neo-black text-neo-black" placeholder="e.g., Pitch Presentation" />
-                    <button disabled={busy} className="bg-neo-black px-8 py-3 font-hero text-3xl uppercase tracking-widest text-[#fff] shadow-[4px_4px_0_#111] hover:-translate-y-1 hover:shadow-[6px_6px_0_#111] transition-all disabled:opacity-50">+ Add Setup</button>
+                    <button disabled={busy || tracks.length === 0} className="bg-neo-black px-8 py-3 font-hero text-3xl uppercase tracking-widest text-[#fff] shadow-[4px_4px_0_#111] hover:-translate-y-1 hover:shadow-[6px_6px_0_#111] transition-all disabled:opacity-50">+ Add Setup</button>
                   </form>
 
                   <div className="max-w-4xl mx-auto space-y-4">
@@ -754,9 +812,13 @@ export default function AdminPage() {
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4">
                     <select value={rubricTrack} onChange={e => setRubricTrack(e.target.value)} className="border-4 border-neo-black bg-neo-white px-6 py-3 font-hero text-2xl text-neo-black outline-none focus:border-white transition-colors cursor-pointer shadow-[2px_2px_0_#111]">
-                      {tracks.map(t => (
-                        <option key={t.id} value={t.id}>{t.name.toUpperCase()} TRACK</option>
-                      ))}
+                      {tracks.length === 0 ? (
+                        <option value="">NO TRACKS</option>
+                      ) : (
+                        tracks.map(t => (
+                          <option key={t.id} value={t.id}>{t.name.toUpperCase()} TRACK</option>
+                        ))
+                      )}
                     </select>
                     <select value={rubricRound} onChange={e => setRubricRound(e.target.value)} className="border-4 border-neo-black bg-neo-white px-6 py-3 font-hero text-2xl text-neo-black outline-none focus:border-white transition-colors cursor-pointer shadow-[2px_2px_0_#111]">
                       {(roundsByTrack?.[rubricTrack] || []).map(r => (
@@ -792,7 +854,7 @@ export default function AdminPage() {
                              <div className="text-xs uppercase text-gray-500 font-bold tracking-widest">Max Marks</div>
                              <input type="number" min="1" value={newRubricRow.max} onChange={e => setNewRubricRow(m => ({...m, max: e.target.value}))} className="border-b-4 border-neo-black bg-white p-3 font-hero text-2xl text-neo-black outline-none focus:border-neo-black transition-colors" placeholder="e.g. 20" />
                            </label>
-                           <button disabled={busy} className="bg-neo-yellow mt-4 px-6 py-4 font-hero text-2xl uppercase tracking-widest text-neo-white shadow-[4px_4px_0_#111] hover:-translate-y-1 hover:shadow-[6px_6px_0_#111] transition-all disabled:opacity-50">
+                           <button disabled={busy || tracks.length === 0 || !rubricRound} className="bg-neo-yellow mt-4 px-6 py-4 font-hero text-2xl uppercase tracking-widest text-neo-white shadow-[4px_4px_0_#111] hover:-translate-y-1 hover:shadow-[6px_6px_0_#111] transition-all disabled:opacity-50">
                              + ADD CRITERION
                            </button>
                          </form>
@@ -842,7 +904,7 @@ export default function AdminPage() {
                       </div>
 
                       <form onSubmit={handleAddJudge} className="flex flex-col gap-4 mb-6">
-                        <input value={addJudgeForm.uid} onChange={e => setAddJudgeForm(f => ({...f, uid: e.target.value}))} className="w-full border-b-4 border-neo-black bg-neo-white p-3 font-hero text-xl sm:text-2xl outline-none focus:border-neo-black text-neo-black transition-colors" placeholder="Copy/Paste Judge Firebase UID" />
+                        <input value={addJudgeForm.uid} onChange={e => setAddJudgeForm(f => ({...f, uid: e.target.value}))} className="w-full border-b-4 border-neo-black bg-neo-white p-3 font-hero text-xl sm:text-2xl outline-none focus:border-neo-black text-neo-black transition-colors" placeholder="Copy/Paste Judge Social Handle (e.g. dev#1234)" />
                         <div className="flex flex-col xl:flex-row gap-4">
                           <input value={addJudgeForm.name} onChange={e => setAddJudgeForm(f => ({...f, name: e.target.value}))} className="w-full xl:flex-1 border-b-4 border-neo-black bg-neo-white p-3 font-hero text-xl sm:text-2xl outline-none focus:border-neo-black text-neo-black transition-colors" placeholder="Display Name (e.g. Dr. Alan)" />
                           <button disabled={busy} className="w-full xl:w-auto bg-neo-red px-6 py-3 font-hero text-xl sm:text-2xl uppercase tracking-widest text-neo-black border-4 border-neo-black shadow-[4px_4px_0_#111] hover:-translate-y-1 hover:shadow-[6px_6px_0_#111] transition-all disabled:opacity-50">Authorize</button>
@@ -850,9 +912,9 @@ export default function AdminPage() {
                       </form>
                       <p className="text-sm font-medium text-gray-500 bg-neo-white/50 p-3 border-l-4 border-neo-black">
                         <strong className="text-neo-black block mb-1">How this works:</strong>
-                        1. The judge visits your leaderboard URL and signs up/logs in.<br/>
-                        2. They copy their UID and securely send it to you.<br/>
-                        3. You paste it here. It instantly grants them grading access!
+                        1. The evaluator visits your leaderboard and signs up/logs in.<br/>
+                        2. They copy their customized Social Handle and send it to you.<br/>
+                        3. You paste it here. Our system securely resolves it to grant grading clearance instantly!
                       </p>
                     </div>
                   </div>
@@ -866,7 +928,7 @@ export default function AdminPage() {
                             <span className="text-neo-black font-hero text-3xl uppercase tracking-wider block">{j.name}</span>
                             <span className="text-gray-500 font-bold text-xs font-mono uppercase tracking-widest mt-1 flex items-center gap-2">
                               ID: {j.id}
-                              <button onClick={() => { navigator.clipboard.writeText(j.id); customAlert('Copied UID: ' + j.id) }} title="Copy UID" className="hover:text-neo-black transition-colors active:scale-95">
+                              <button onClick={() => { navigator.clipboard.writeText(j.id); playSuccessChime(); setToast({ type: 'success', message: 'UID copied to clipboard!' }) }} title="Copy UID" className="hover:text-neo-black transition-colors active:scale-95">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                               </button>
                             </span>
@@ -913,13 +975,17 @@ export default function AdminPage() {
                             onChange={e => setAddForm({ ...addForm, track: e.target.value })} 
                             className="w-full xl:w-auto border-4 border-neo-black bg-neo-white p-4 font-hero text-2xl text-neo-black outline-none focus:bg-neo-yellow/10 transition-colors tracking-widest uppercase cursor-pointer"
                           >
-                            {tracks.map(t => (
-                              <option key={t.id} value={t.id}>{t.name.toUpperCase()}</option>
-                            ))}
+                            {tracks.length === 0 ? (
+                              <option value="">NO TRACKS</option>
+                            ) : (
+                              tracks.map(t => (
+                                <option key={t.id} value={t.id}>{t.name.toUpperCase()}</option>
+                              ))
+                            )}
                           </select>
                         </div>
-                        <button disabled={busy} className="bg-neo-yellow px-8 py-4 font-hero text-3xl uppercase tracking-widest text-neo-black border-4 border-neo-black shadow-[6px_6px_0_#111] hover:-translate-y-1 hover:shadow-[8px_8px_0_#111] transition-all disabled:bg-neo-lightgray disabled:text-gray-400 disabled:shadow-none disabled:translate-y-0 disabled:cursor-not-allowed">
-                          CREATE TEAM
+                        <button disabled={busy || tracks.length === 0} className="bg-neo-yellow px-8 py-4 font-hero text-3xl uppercase tracking-widest text-neo-black border-4 border-neo-black shadow-[6px_6px_0_#111] hover:-translate-y-1 hover:shadow-[8px_8px_0_#111] transition-all disabled:bg-neo-lightgray disabled:text-gray-400 disabled:shadow-none disabled:translate-y-0 disabled:cursor-not-allowed">
+                          {tracks.length === 0 ? 'CREATE TRACK FIRST' : 'CREATE TEAM'}
                         </button>
                       </form>
                     </div>
@@ -1035,9 +1101,13 @@ export default function AdminPage() {
                         onChange={e => setRoundManageTrack(e.target.value)} 
                         className="border-4 border-neo-black bg-neo-white px-6 py-3 font-hero text-2xl text-neo-black outline-none focus:border-white transition-colors cursor-pointer shadow-[4px_4px_0_#111]"
                       >
-                        {tracks.map(t => (
-                          <option key={t.id} value={t.id}>{t.name.toUpperCase()} ROUNDS</option>
-                        ))}
+                        {tracks.length === 0 ? (
+                          <option value="">NO TRACKS</option>
+                        ) : (
+                          tracks.map(t => (
+                            <option key={t.id} value={t.id}>{t.name.toUpperCase()} ROUNDS</option>
+                          ))
+                        )}
                       </select>
                       <button
                         onClick={handleResetRoundScores}
@@ -1053,7 +1123,7 @@ export default function AdminPage() {
                   <form onSubmit={handleAddRound} className="flex flex-col sm:flex-row gap-4 mb-10 bg-neo-white p-6 border-4 border-neo-black shadow-[6px_6px_0_#111] relative">
                     <div className="absolute -top-4 left-4 bg-white px-2 font-black uppercase text-gray-500 tracking-widest text-xs">Add New Column</div>
                     <input value={newRoundName} onChange={e => setNewRoundName(e.target.value)} className="flex-1 border-b-4 border-neo-black bg-transparent p-3 font-hero text-3xl outline-none focus:border-neo-black text-neo-black" placeholder="e.g., UI/UX Design" />
-                    <button disabled={busy} className="bg-neo-black px-8 py-3 font-hero text-3xl uppercase tracking-widest text-neo-white shadow-[4px_4px_0_#FFD600] hover:-translate-y-1 hover:shadow-[6px_6px_0_#FFD600] transition-all disabled:opacity-50">Create</button>
+                    <button disabled={busy || tracks.length === 0} className="bg-neo-black px-8 py-3 font-hero text-3xl uppercase tracking-widest text-neo-white shadow-[4px_4px_0_#FFD600] hover:-translate-y-1 hover:shadow-[6px_6px_0_#FFD600] transition-all disabled:opacity-50">Create</button>
                   </form>
 
                   <div>
@@ -1095,6 +1165,7 @@ export default function AdminPage() {
                 .sort((a, b) => b.total - a.total)
 
               const handleExportCSV = () => {
+                playFanfare()
                 const activeJudgeNames = judgesList.reduce((map, j) => { map[j.id] = j.name; return map }, {})
                 const judgeIds = judgesList.filter(j => activeJudges.includes(j.id)).map(j => j.id)
 
@@ -1156,16 +1227,16 @@ export default function AdminPage() {
 
                   {/* Single horizontal scroll container */}
                   <div className="relative z-10 overflow-x-auto scrollbar-thin">
-                    <div style={{ minWidth: `${600 + viewRounds.length * 110 + viewBonuses.length * 100}px` }}>
+                    <div style={{ minWidth: `${600 + viewRounds.length * 120 + viewBonuses.length * 140}px` }}>
                       
                       {/* Column Header Bar */}
                       <div className="grid gap-0 bg-neo-white border-b-4 border-neo-black px-4 py-3 sticky top-0 z-20"
-                        style={{ gridTemplateColumns: `60px 1fr ${viewRounds.map(() => '100px').join(' ')} ${viewBonuses.map(() => '90px').join(' ')} 100px` }}
+                        style={{ gridTemplateColumns: `60px 1fr ${viewRounds.map(() => '120px').join(' ')} ${viewBonuses.map(() => '140px').join(' ')} 100px` }}
                       >
                         <div className="font-hero text-sm uppercase tracking-widest text-gray-500">#</div>
                         <div className="font-hero text-sm uppercase tracking-widest text-gray-500">Team Name</div>
-                        {viewRounds.map(r => <div key={r} className="font-hero text-sm uppercase tracking-widest text-gray-500 text-center">{r}</div>)}
-                        {viewBonuses.map(b => <div key={`bh_${b}`} className="font-hero text-sm uppercase tracking-widest text-neo-black/60 text-center">{b}</div>)}
+                        {viewRounds.map(r => <div key={r} className="font-hero text-xs uppercase tracking-widest text-gray-500 text-center break-words px-1 leading-tight flex items-center justify-center h-full">{r}</div>)}
+                        {viewBonuses.map(b => <div key={`bh_${b}`} className="font-hero text-xs uppercase tracking-widest text-neo-black/60 text-center break-words px-1 leading-tight flex items-center justify-center h-full">{b}</div>)}
                         <div className="font-hero text-sm uppercase tracking-widest text-gray-500 text-center">Total</div>
                       </div>
 
@@ -1189,7 +1260,7 @@ export default function AdminPage() {
                               className={`grid gap-0 items-center px-4 py-3 cursor-pointer transition-all border-b-4 border-neo-black/50 hover:bg-neo-yellow/20 ${
                                 isExpanded ? 'bg-neo-yellow/40 border-l-4 border-l-neo-black' : isTop3 ? 'bg-white/60' : (idx % 2 === 0 ? 'bg-white/20' : 'bg-neo-white/20')
                               }`}
-                              style={{ gridTemplateColumns: `60px 1fr ${viewRounds.map(() => '100px').join(' ')} ${viewBonuses.map(() => '90px').join(' ')} 100px` }}
+                              style={{ gridTemplateColumns: `60px 1fr ${viewRounds.map(() => '120px').join(' ')} ${viewBonuses.map(() => '140px').join(' ')} 100px` }}
                             >
                               {/* Rank */}
                               <div className={`font-hero text-2xl tabular-nums ${isTop3 ? accentColorText : 'text-gray-500'} drop-shadow-[1px_1px_0_#111]`}>

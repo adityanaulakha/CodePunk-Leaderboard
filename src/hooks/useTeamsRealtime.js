@@ -35,9 +35,9 @@ function scoresChanged(prev, next) {
 
 export default function useTeamsRealtime(hackathonId) {
   const [teams, setTeams] = useState([])
-  const [tracks, setTracks] = useState([{ id: 'software', name: 'Software' }, { id: 'hardware', name: 'Hardware' }])
-  const [roundsByTrack, setRoundsByTrack] = useState({ software: ['Round 1', 'Round 2', 'Final'], hardware: ['Round 1', 'Round 2', 'Final'] })
-  const [bonusesByTrack, setBonusesByTrack] = useState({ software: ['HackerRank', 'Riddle Bonus'], hardware: [] })
+  const [tracks, setTracks] = useState([])
+  const [roundsByTrack, setRoundsByTrack] = useState({})
+  const [bonusesByTrack, setBonusesByTrack] = useState({})
   const [isFrozen, setIsFrozen] = useState(false)
   const [celebrationAt, setCelebrationAt] = useState(null)
   const [activeJudges, setActiveJudges] = useState([])
@@ -105,10 +105,10 @@ export default function useTeamsRealtime(hackathonId) {
         if (data.tracks && Array.isArray(data.tracks)) {
           setTracks(data.tracks)
         } else {
-          setTracks([{ id: 'software', name: 'Software' }, { id: 'hardware', name: 'Hardware' }])
+          setTracks([])
         }
 
-        const nextRounds = { software: [], hardware: [] }
+        const nextRounds = {}
         if (data.rounds && !Array.isArray(data.rounds)) {
           Object.assign(nextRounds, data.rounds)
         } else {
@@ -119,7 +119,7 @@ export default function useTeamsRealtime(hackathonId) {
         }
         setRoundsByTrack(nextRounds)
 
-        const nextBonuses = { software: [], hardware: [] }
+        const nextBonuses = {}
         if (data.bonuses && !Array.isArray(data.bonuses)) {
           Object.assign(nextBonuses, data.bonuses)
         } else {

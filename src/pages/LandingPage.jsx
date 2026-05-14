@@ -33,38 +33,38 @@ export default function LandingPage() {
   }, [])
 
   const trustedBy = [
-    { name: "TECH CRUNCH", color: "bg-green-400" },
-    { name: "MIT HACKATHON", color: "bg-neo-yellow" },
-    { name: "DEFCON", color: "bg-neo-red text-white" },
-    { name: "MLH", color: "bg-white" },
-    { name: "STANFORD WEB3", color: "bg-neo-lightgray" },
-    { name: "Y COMBINATOR", color: "bg-[#FF6600] text-white" }
+    { name: "INC42", color: "bg-green-400" },
+    { name: "IIT BOMBAY", color: "bg-neo-yellow" },
+    { name: "NULLCON", color: "bg-neo-red text-white" },
+    { name: "DEVFOLIO", color: "bg-white" },
+    { name: "ETH INDIA", color: "bg-neo-lightgray" },
+    { name: "SMART INDIA HACKATHON", color: "bg-[#FF9933] text-white" }
   ]
 
   const testimonials = [
     { 
-      name: "Sarah Jenkins", 
-      handle: "@sarahj_codes",
-      role: "Lead Organizer, HackTheNorth", 
+      name: "Neha Sharma", 
+      handle: "@neha_codes",
+      role: "Lead Organizer, ETHIndia", 
       text: "LeadX completely removed the chaos of judging. Our mentors just opened the link and started grading. No spreadsheets, zero panic.",
       stars: 5,
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah"
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Neha"
     },
     { 
-      name: "Dr. Alan Turing", 
-      handle: "@alant_cs",
-      role: "Head of CS, Stanford", 
+      name: "Dr. Arjun Patel", 
+      handle: "@arjun_cse",
+      role: "Head of CSE, IIT Madras", 
       text: "The suspense mode where the leaderboard freezes during final evaluations... brilliant. It made our closing ceremony incredibly hype.",
       stars: 5,
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alan"
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun"
     },
     { 
-      name: "Mark Veris", 
-      handle: "@mark_builds",
-      role: "Director, BuildSpace", 
+      name: "Ishaan Verma", 
+      handle: "@ishaan_builds",
+      role: "Community Lead, Devfolio", 
       text: "Finally, a platform that doesn't look like it was built in 2005. LeadX is fast, brutal, and does exactly what it promises.",
       stars: 5,
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Mark"
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ishaan"
     }
   ]
 

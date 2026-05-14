@@ -17,7 +17,7 @@ export default function LandingPage() {
     const formattedId = eventCode.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')
     navigate(`/${formattedId}`)
   }
-  
+
   useEffect(() => {
     if (!auth) return undefined
     const unsub = auth.onAuthStateChanged((u) => setUser(u))
@@ -42,26 +42,26 @@ export default function LandingPage() {
   ]
 
   const testimonials = [
-    { 
-      name: "Neha Sharma", 
+    {
+      name: "Neha Sharma",
       handle: "@neha_codes",
-      role: "Lead Organizer, ETHIndia", 
+      role: "Lead Organizer, ETHIndia",
       text: "LeadX completely removed the chaos of judging. Our mentors just opened the link and started grading. No spreadsheets, zero panic.",
       stars: 5,
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Neha"
     },
-    { 
-      name: "Dr. Arjun Patel", 
+    {
+      name: "Dr. Arjun Patel",
       handle: "@arjun_cse",
-      role: "Head of CSE, IIT Madras", 
+      role: "Head of CSE, IIT Madras",
       text: "The suspense mode where the leaderboard freezes during final evaluations... brilliant. It made our closing ceremony incredibly hype.",
       stars: 5,
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun"
     },
-    { 
-      name: "Ishaan Verma", 
+    {
+      name: "Ishaan Verma",
       handle: "@ishaan_builds",
-      role: "Community Lead, Devfolio", 
+      role: "Community Lead, Devfolio",
       text: "Finally, a platform that doesn't look like it was built in 2005. LeadX is fast, brutal, and does exactly what it promises.",
       stars: 5,
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ishaan"
@@ -75,10 +75,10 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-neo-white flex flex-col font-base text-neo-black overflow-x-hidden selection:bg-neo-yellow selection:text-neo-black">
-      
+
       {/* Navigation */}
       <nav className={`w-full flex items-center justify-between px-6 py-4 border-b-4 border-neo-black bg-neo-white z-50 fixed top-0 transition-all duration-300 ${isScrolled ? 'shadow-[4px_4px_0_#111] py-3 bg-white' : ''}`}>
-        <div 
+        <div
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           className="font-hero text-2xl lg:text-3xl font-black tracking-widest flex items-center gap-2 relative z-10 hover:scale-105 transition-transform cursor-pointer"
         >
@@ -95,8 +95,8 @@ export default function LandingPage() {
               <button onClick={() => signOut(auth)} className="font-black text-sm lg:text-base uppercase tracking-widest hover:text-neo-red transition-colors hidden sm:block">
                 SIGN OUT
               </button>
-              <Link 
-                to="/dashboard" 
+              <Link
+                to="/dashboard"
                 className="font-black text-sm lg:text-base uppercase tracking-widest bg-neo-yellow border-4 border-neo-black px-6 py-2 shadow-[4px_4px_0_#111] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all flex items-center gap-2"
               >
                 DASHBOARD
@@ -107,8 +107,8 @@ export default function LandingPage() {
               <Link to="/login" className="font-black text-sm lg:text-base uppercase tracking-widest hover:underline underline-offset-8 transition-all hidden sm:block">
                 LOG IN
               </Link>
-              <Link 
-                to="/login?mode=signup" 
+              <Link
+                to="/login?mode=signup"
                 className="font-black text-sm lg:text-base uppercase tracking-widest bg-neo-yellow border-4 border-neo-black px-6 py-2 shadow-[4px_4px_0_#111] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all flex items-center gap-2"
               >
                 GET STARTED
@@ -120,7 +120,7 @@ export default function LandingPage() {
 
       {/* Main Hero Section */}
       <main className="flex-1 flex flex-col items-center justify-start text-center px-4 pt-32 lg:pt-40 pb-24 relative z-10 w-full max-w-7xl mx-auto mt-16">
-        
+
         <motion.div
           initial="hidden"
           animate="visible"
@@ -170,35 +170,35 @@ export default function LandingPage() {
             <p className="text-lg sm:text-2xl font-bold leading-relaxed text-zinc-800 tracking-wider">
               Never lose track of live ranks, judge evaluations, or dynamic leaderboards. Standardize your competitive events with absolute precision and raw efficiency.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row items-center gap-4 mt-8 bg-white border-4 border-neo-black px-6 py-3 shadow-[4px_4px_0_#111] hover:-translate-y-1 hover:shadow-[6px_6px_0_#111] transition-all cursor-default">
               <div className="flex -space-x-3">
-                {[1,2,3,4,5].map((i) => (
-                  <img key={i} src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i+50}&backgroundColor=b6e3f4,c0aede,d1d4f9`} alt="avatar" className="w-10 h-10 rounded-full border-2 border-neo-black bg-neo-lightgray" />
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <img key={i} src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i + 50}&backgroundColor=b6e3f4,c0aede,d1d4f9`} alt="avatar" className="w-10 h-10 rounded-full border-2 border-neo-black bg-neo-lightgray" />
                 ))}
               </div>
               <div className="font-black text-sm uppercase tracking-widest text-center sm:text-left leading-tight">
-                Trusted by 500+ <br/> Organizers
+                Trusted by 500+ <br /> Organizers
               </div>
             </div>
           </motion.div>
 
           {/* CTA Buttons */}
           <motion.div variants={fadeUp} className="mt-16 flex flex-col sm:flex-row items-stretch sm:items-center gap-6 w-full max-w-2xl px-4 z-10">
-            <Link 
-              to={user ? "/dashboard" : "/login?mode=signup"} 
+            <Link
+              to={user ? "/dashboard" : "/login?mode=signup"}
               className="w-full flex-1 font-hero text-xl lg:text-2xl uppercase tracking-widest bg-neo-black text-neo-white border-4 border-neo-black py-4 shadow-[8px_8px_0_#FFD600] hover:translate-x-2 hover:translate-y-2 hover:shadow-none transition-all flex items-center justify-center gap-3 relative group overflow-hidden"
             >
               <span className="relative z-10">START ORGANIZING</span>
               <div className="absolute inset-0 bg-neo-yellow translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out z-0 border-r-4 border-neo-black"></div>
               <span className="relative z-10 group-hover:text-neo-black transition-colors duration-300">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                  <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
               </span>
             </Link>
-            <Link 
-              to={user ? "/assignments" : "/login"} 
+            <Link
+              to={user ? "/assignments" : "/login"}
               className="w-full sm:w-auto font-hero text-xl lg:text-2xl uppercase tracking-widest bg-white text-neo-black border-4 border-neo-black py-4 px-8 shadow-[8px_8px_0_#111] hover:bg-neo-lightgray hover:translate-x-2 hover:translate-y-2 hover:shadow-none transition-all flex items-center justify-center"
             >
               JUDGE PORTAL
@@ -206,20 +206,20 @@ export default function LandingPage() {
           </motion.div>
 
           {/* Find Live Leaderboard Search Block */}
-          <motion.div 
-            variants={fadeUp} 
+          <motion.div
+            variants={fadeUp}
             className="mt-12 w-full max-w-xl px-4 z-10"
           >
             <form onSubmit={handleFindLeaderboard} className="flex border-4 border-neo-black bg-white shadow-[6px_6px_0_#FFD600] hover:-translate-y-1 hover:shadow-[8px_8px_0_#FFD600] transition-all relative group rounded-none">
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={eventCode}
                 onChange={(e) => setEventCode(e.target.value)}
-                placeholder="ENTER EVENT CODE (e.g. code-punk)" 
+                placeholder="ENTER EVENT CODE (e.g. code-punk)"
                 className="flex-1 px-5 py-4 font-black text-neo-black placeholder-zinc-500 uppercase tracking-wider outline-none text-sm sm:text-base border-r-4 border-neo-black bg-white rounded-none"
               />
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="bg-neo-yellow px-6 py-4 font-hero text-lg uppercase tracking-widest text-neo-black hover:bg-neo-black hover:text-white transition-colors cursor-pointer flex items-center gap-2 rounded-none border-0"
               >
                 FIND ⚡
@@ -229,7 +229,7 @@ export default function LandingPage() {
         </motion.div>
 
         {/* Product Mockup Component */}
-        <motion.div 
+        <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
@@ -238,7 +238,7 @@ export default function LandingPage() {
         >
           {/* Offset Background for Mockup */}
           <div className="absolute inset-0 bg-neo-yellow translate-x-4 translate-y-4 sm:translate-x-8 sm:translate-y-8 border-4 border-neo-black -z-10 group-hover:translate-x-2 group-hover:translate-y-2 transition-transform duration-500"></div>
-          
+
           <div className="border-4 border-neo-black bg-white flex flex-col group-hover:-translate-y-2 transition-transform duration-500">
             <div className="border-b-4 border-neo-black bg-neo-lightgray px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between">
               <div className="flex items-center gap-2 sm:gap-3">
@@ -249,10 +249,10 @@ export default function LandingPage() {
               <div className="font-mono text-[10px] sm:text-xs font-black text-neo-black uppercase tracking-widest bg-white border-2 border-neo-black px-4 py-1 shadow-[2px_2px_0_#111]">leaderboard.app/demo</div>
               <div className="w-16 sm:w-20 hidden sm:block"></div>
             </div>
-            
+
             <div className="p-4 sm:p-10 bg-white flex flex-col gap-6 relative min-h-[300px] sm:min-h-[400px] overflow-hidden">
               <div className="absolute inset-0 bg-[linear-gradient(rgba(17,17,17,0.05)_2px,transparent_2px),linear-gradient(90deg,rgba(17,17,17,0.05)_2px,transparent_2px)] bg-[size:32px_32px] pointer-events-none"></div>
-              
+
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b-4 border-neo-black pb-4 relative z-10 gap-4">
                 <div className="font-hero text-3xl sm:text-5xl text-neo-black uppercase tracking-wider drop-shadow-[2px_2px_0_#FFD600] flex items-center gap-4">
                   LIVE RANKS
@@ -271,7 +271,7 @@ export default function LandingPage() {
                     <div className="flex items-center gap-3 sm:gap-6">
                       <div className="font-hero text-xl sm:text-4xl text-neo-black/30 w-6 sm:w-8">0{row}</div>
                       <div className="w-8 h-8 sm:w-12 sm:h-12 border-4 border-neo-black bg-white shadow-brutal-sm overflow-hidden flex items-center justify-center">
-                        <img src={`https://api.dicebear.com/7.x/shapes/svg?seed=${row*123}&backgroundColor=ffffff`} alt="avatar" className="w-full h-full object-cover" />
+                        <img src={`https://api.dicebear.com/7.x/shapes/svg?seed=${row * 123}&backgroundColor=ffffff`} alt="avatar" className="w-full h-full object-cover" />
                       </div>
                       <div className="font-hero text-lg sm:text-3xl uppercase tracking-widest text-neo-black truncate max-w-[120px] sm:max-w-none">TEAM EPSILON {row}</div>
                     </div>
@@ -283,7 +283,7 @@ export default function LandingPage() {
               {/* Fake cursor element */}
               <div className="absolute bottom-8 right-1/4 z-20 animate-[bounce_3s_infinite] hidden sm:block pointer-events-none drop-shadow-[2px_2px_0_#111]">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="#FFD600" stroke="#111" strokeWidth="2">
-                  <path d="M4 4l5.5 16.5L13 14l5 5 2.5-2.5-5-5 6.5-3.5L4 4z"/>
+                  <path d="M4 4l5.5 16.5L13 14l5 5 2.5-2.5-5-5 6.5-3.5L4 4z" />
                 </svg>
               </div>
             </div>
@@ -349,7 +349,7 @@ export default function LandingPage() {
               <div className="w-12 h-12 bg-neo-black text-neo-yellow border-4 border-neo-black flex items-center justify-center font-hero text-2xl shadow-brutal mb-6 font-black">M</div>
               <h3 className="font-hero text-3xl text-neo-black uppercase tracking-widest mb-2">DYNAMIC TRACKS</h3>
               <p className="font-bold text-sm text-gray-500 uppercase tracking-widest mb-6">SUPPORT ANY EVENT TAXONOMY</p>
-              
+
               <div className="flex flex-col gap-2">
                 {['SOFTWARE DEV', 'ART & DESIGN', 'WEB3 HACKS'].map((track, i) => (
                   <div key={i} className="flex items-center justify-between border-2 border-neo-black px-3 py-1.5 font-black text-xs uppercase bg-neo-lightgray">
@@ -371,11 +371,11 @@ export default function LandingPage() {
             <div>
               <h3 className="font-hero text-3xl text-white uppercase tracking-widest mb-2">FLEXIBLE RUBRICS</h3>
               <p className="font-bold text-xs text-neo-yellow uppercase tracking-widest mb-6">LOCK PARAMETERS PER ROUND</p>
-              
+
               <div className="flex border-2 border-white mb-4 overflow-hidden text-xs font-black">
                 {['design', 'code'].map((tab) => (
-                  <button 
-                    key={tab} 
+                  <button
+                    key={tab}
                     onClick={() => setActiveTab(tab)}
                     className={`flex-1 py-1.5 uppercase transition-colors ${activeTab === tab ? 'bg-white text-neo-black' : 'text-white'}`}
                   >
@@ -478,12 +478,12 @@ export default function LandingPage() {
                 features: ["Type Code to Enter", "Instant Score Lookup", "QR-Code Friendly Routes", "Custom Friendly Names"]
               }
             ].map((card, idx) => (
-              <motion.div 
-                key={card.step} 
-                initial="hidden" 
-                whileInView="visible" 
-                viewport={{ once: true }} 
-                variants={fadeUp} 
+              <motion.div
+                key={card.step}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={fadeUp}
                 className="border-4 border-neo-black bg-white p-8 shadow-[8px_8px_0_#FFD600] text-neo-black flex flex-col justify-between group hover:-translate-y-2 hover:shadow-[12px_12px_0_#FFD600] transition-all duration-300 z-10 min-h-[380px]"
               >
                 <div>
@@ -493,7 +493,7 @@ export default function LandingPage() {
                   </div>
                   <h3 className="font-hero text-2xl uppercase tracking-widest mb-4">{card.title}</h3>
                   <p className="font-bold text-gray-600 uppercase tracking-wider text-xs leading-relaxed mb-6">{card.desc}</p>
-                  
+
                   <div className="flex flex-wrap gap-2">
                     {card.features.map((f, i) => (
                       <span key={i} className="bg-neo-lightgray border-2 border-neo-black px-2 py-1 font-black text-[10px] uppercase tracking-wider text-neo-black">
@@ -520,12 +520,12 @@ export default function LandingPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {testimonials.map((t, idx) => (
-            <motion.div 
-              key={idx} 
-              initial="hidden" 
-              whileInView="visible" 
-              viewport={{ once: true }} 
-              variants={fadeUp} 
+            <motion.div
+              key={idx}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={fadeUp}
               className="border-4 border-neo-black bg-white p-8 shadow-brutal flex flex-col justify-between hover:bg-neo-yellow hover:-translate-y-2 transition-all duration-300"
             >
               <div>
@@ -562,8 +562,8 @@ export default function LandingPage() {
             <p className="font-bold text-lg sm:text-xl uppercase tracking-widest text-neo-black mb-8 max-w-md leading-relaxed">
               Stop using legacy spreadsheets. Standardize on the robust scoring network engineered for hackathons, design challenges, and competitive sprints.
             </p>
-            <Link 
-              to="/login?mode=signup" 
+            <Link
+              to="/login?mode=signup"
               className="font-hero text-2xl sm:text-4xl uppercase tracking-widest bg-neo-black text-neo-white border-4 border-neo-black px-10 py-5 shadow-[8px_8px_0_#FFF] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
             >
               GET DEPLOYED &rarr;
@@ -591,18 +591,18 @@ export default function LandingPage() {
       {/* Footer - Full Professional Multi-Column */}
       <footer className="w-full border-t-4 border-neo-black bg-white py-16 px-8 relative z-20">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-          <div className="flex flex-col items-start gap-4">
-            <img 
+          <div className="flex flex-col items-start gap-4 md:col-span-3">
+            <img
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              src="/Lead-X.png" 
-              alt="LeadX Logo" 
-              className="h-12 drop-shadow-[2px_2px_0_#111] cursor-pointer hover:scale-105 transition-transform" 
+              src="/Lead-X.png"
+              alt="LeadX Logo"
+              className="h-16 lg:h-20 drop-shadow-[2px_2px_0_#111] cursor-pointer hover:scale-105 transition-transform"
             />
             <p className="font-bold uppercase text-xs text-gray-500 tracking-wider max-w-xs leading-relaxed">
               Standardizing hackathons and competitive sprints with real-time scoring data fabric.
             </p>
           </div>
-          <div>
+          <div className="md:justify-self-end">
             <h4 className="font-hero text-lg uppercase tracking-wider mb-4 text-neo-black">PRODUCT</h4>
             <ul className="space-y-2 font-black uppercase text-xs text-gray-500 tracking-widest">
               <li><a href="#features" className="hover:text-neo-black">Features</a></li>
@@ -610,32 +610,11 @@ export default function LandingPage() {
               <li><Link to="/login" className="hover:text-neo-black">Sign Up</Link></li>
             </ul>
           </div>
-          <div>
-            <h4 className="font-hero text-lg uppercase tracking-wider mb-4 text-neo-black">RESOURCES</h4>
-            <ul className="space-y-2 font-black uppercase text-xs text-gray-500 tracking-widest">
-              <li><a href="#" className="hover:text-neo-black">Documentation</a></li>
-              <li><a href="#" className="hover:text-neo-black">API Reference</a></li>
-              <li><a href="#" className="hover:text-neo-black">Status</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-hero text-lg uppercase tracking-wider mb-4 text-neo-black">COMPANY</h4>
-            <ul className="space-y-2 font-black uppercase text-xs text-gray-500 tracking-widest">
-              <li><a href="#" className="hover:text-neo-black">About</a></li>
-              <li><a href="#" className="hover:text-neo-black">Terms of Service</a></li>
-              <li><a href="#" className="hover:text-neo-black">Privacy Policy</a></li>
-            </ul>
-          </div>
         </div>
 
         <div className="max-w-7xl mx-auto border-t-4 border-neo-black pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="font-black uppercase text-xs text-gray-500 tracking-widest">
             &copy; 2026 LEADX INC. ALL RIGHTS RESERVED.
-          </div>
-          <div className="flex gap-6 font-black uppercase text-xs tracking-widest text-gray-500">
-            <span className="hover:text-neo-black cursor-pointer transition-colors">Twitter</span>
-            <span className="hover:text-neo-black cursor-pointer transition-colors">GitHub</span>
-            <span className="hover:text-neo-black cursor-pointer transition-colors">Discord</span>
           </div>
         </div>
       </footer>

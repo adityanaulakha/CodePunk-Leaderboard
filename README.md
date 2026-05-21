@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="./public/LeadX.png" alt="LeadX Logo" width="200" />
+</div>
+
 # LeadX: The Premium Scoring Protocol
 
 [![Vercel Deployment](https://img.shields.io/badge/Deploy-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com)

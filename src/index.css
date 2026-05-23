@@ -24,6 +24,10 @@
   *::before,
   *::after {
     box-sizing: border-box;
+  }
+
+  .flex > *,
+  .grid > * {
     min-width: 0;
   }
 

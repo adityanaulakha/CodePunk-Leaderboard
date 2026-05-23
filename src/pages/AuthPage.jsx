@@ -176,7 +176,8 @@ export default function AuthPage() {
             className="w-full bg-white border-4 border-neo-black px-4 sm:px-6 py-3 sm:py-4 font-hero text-sm sm:text-xl lg:text-2xl tracking-wide sm:tracking-widest uppercase text-neo-black flex items-center justify-center gap-2 sm:gap-3 hover:-translate-y-1 active:translate-y-0.5 active:shadow-none transition-all shadow-[4px_4px_0_#111] cursor-pointer disabled:opacity-50 text-center leading-tight"
           >
             <svg className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12.545 11.033v4.354h7.364c-.26 1.895-2.284 5.543-7.364 5.543-4.39 0-7.966-3.64-7.966-8.121 0-4.481 3.576-8.121 7.966-8.121 2.5 0 4.17 1.048 5.127 1.967l3.423-3.379c-2.2-2.057-5.287-3.307-8.55-3.307-7.18 0-13 5.82-13 13s5.82 13 13 13c7.5 0 12.48-5.276 12.48-12.69 0-.854-.09-1.5-.2-2.13h-12.28z"/></svg>
-            CONTINUE WITH GOOGLE
+            <span className="sm:hidden">GOOGLE SIGN IN</span>
+            <span className="hidden sm:inline">CONTINUE WITH GOOGLE</span>
           </button>
         </div>
 

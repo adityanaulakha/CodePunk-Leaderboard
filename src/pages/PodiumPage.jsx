@@ -161,7 +161,7 @@ export default function PodiumPage() {
 
       {/* Header and Prompt */}
       <div className="absolute top-12 left-0 right-0 z-40 flex flex-col items-center pointer-events-none px-4 text-center">
-        <h2 className="font-hero text-3xl sm:text-7xl uppercase text-neo-black tracking-[0.08em] sm:tracking-[0.2em] drop-shadow-[4px_4px_0_#FFD600] break-words">
+        <h2 className="font-hero text-3xl sm:text-7xl uppercase text-neo-black tracking-wide sm:tracking-[0.2em] drop-shadow-[4px_4px_0_#FFD600] break-words">
           {tracks?.find(t => t.id === ceremonyTrack)?.name || ceremonyTrack} Track
         </h2>
         {revealedCount === 0 ? (

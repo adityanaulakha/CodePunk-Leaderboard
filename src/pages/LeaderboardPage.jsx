@@ -28,7 +28,7 @@ function CategoryTabs({ current, onChange, tracks = [] }) {
         <button
           key={t.id}
           onClick={() => onChange(t.id)}
-          className={`w-full sm:w-auto flex-none sm:flex-1 px-3 sm:px-6 py-2 sm:py-3 font-hero text-base sm:text-2xl uppercase transition-colors whitespace-normal sm:whitespace-nowrap break-words ${
+          className={`w-full sm:w-auto sm:flex-1 px-3 sm:px-6 py-2 sm:py-3 font-hero text-base sm:text-2xl uppercase transition-colors whitespace-normal sm:whitespace-nowrap break-words ${
             current === t.id 
               ? 'bg-neo-black text-neo-yellow' 
               : 'text-neo-black hover:bg-neo-lightgray'
@@ -140,7 +140,7 @@ export default function LeaderboardPage() {
 
           <div className="flex flex-col gap-4 items-start md:items-end w-full md:w-auto">
              <CategoryTabs current={track} onChange={setTrack} tracks={tracks} />
-             <div className="border-4 border-neo-black bg-white px-4 py-2 font-black text-xs uppercase tracking-[0.14em] sm:tracking-[0.2em] shadow-[4px_4px_0_#111] flex items-center gap-3 w-full md:w-auto justify-center">
+             <div className="border-4 border-neo-black bg-white px-4 py-2 font-black text-xs uppercase tracking-wide sm:tracking-[0.2em] shadow-[4px_4px_0_#111] flex items-center gap-3 w-full md:w-auto justify-center">
                 <span>TOTAL TEAMS:</span>
                 <span className="text-neo-yellow text-xl drop-shadow-[1px_1px_0_#111]">{filteredTeams.length}</span>
              </div>

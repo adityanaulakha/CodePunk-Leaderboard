@@ -149,7 +149,7 @@ export default function LandingPage() {
           </motion.div>
 
           {/* Headline */}
-          <motion.h1 variants={fadeUp} className="font-hero text-[2.4rem] sm:text-[6rem] lg:text-[7.5rem] xl:text-[9rem] leading-[0.9] sm:leading-[0.85] tracking-tight uppercase text-neo-black flex flex-col items-center z-10 relative">
+          <motion.h1 variants={fadeUp} className="font-hero text-[2.8rem] sm:text-[4.5rem] md:text-[6rem] lg:text-[7.5rem] xl:text-[9rem] leading-[0.9] sm:leading-[0.85] tracking-tight uppercase text-neo-black flex flex-col items-center z-10 relative">
             <span className="block drop-shadow-[4px_4px_0_#FFF] relative">
               <span className="absolute -inset-1 text-neo-yellow opacity-50 blur-sm mix-blend-multiply pointer-events-none">COMPETITIVE</span>
               COMPETITIVE

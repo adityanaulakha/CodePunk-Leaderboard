@@ -295,17 +295,10 @@ export default function LandingPage() {
       <section className="w-full bg-neo-yellow border-y-4 border-neo-black py-12 overflow-hidden relative">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(17,17,17,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(17,17,17,0.03)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none"></div>
         <div className="text-center font-black uppercase tracking-[0.2em] text-neo-black mb-8 text-xs sm:text-sm relative z-10">EMPOWERING ELITE COMPETITIONS & HACKATHONS</div>
-        <div className="w-full relative flex z-10">
-          <div className="flex whitespace-nowrap animate-marquee items-center gap-6">
+        <div className="w-full relative z-10 overflow-hidden">
+          <div className="flex w-max whitespace-nowrap animate-marquee items-center gap-6">
             {[...trustedBy, ...trustedBy].map((brand, i) => (
-              <span key={i} className={`font-hero text-base sm:text-2xl uppercase tracking-wide sm:tracking-widest px-3 sm:px-6 py-3 border-4 border-neo-black shadow-[4px_4px_0_#111] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all cursor-pointer ${brand.color}`}>
-                ⚡ {brand.name}
-              </span>
-            ))}
-          </div>
-          <div className="flex whitespace-nowrap animate-marquee items-center gap-6" aria-hidden="true">
-            {[...trustedBy, ...trustedBy].map((brand, i) => (
-              <span key={i + 'dup'} className={`font-hero text-base sm:text-2xl uppercase tracking-wide sm:tracking-widest px-3 sm:px-6 py-3 border-4 border-neo-black shadow-[4px_4px_0_#111] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all cursor-pointer ${brand.color}`}>
+              <span key={i} className={`shrink-0 font-hero text-base sm:text-2xl uppercase tracking-wide sm:tracking-widest px-3 sm:px-6 py-3 border-4 border-neo-black shadow-[4px_4px_0_#111] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all cursor-pointer ${brand.color}`}>
                 ⚡ {brand.name}
               </span>
             ))}

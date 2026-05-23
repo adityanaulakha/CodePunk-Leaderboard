@@ -89,4 +89,11 @@
 
 .animate-marquee {
   animation: marquee 15s linear infinite;
+  will-change: transform;
+}
+
+@media (max-width: 640px) {
+  .animate-marquee {
+    animation-duration: 22s;
+  }
 }

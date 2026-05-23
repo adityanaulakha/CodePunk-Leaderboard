@@ -216,7 +216,7 @@ export default function LeaderboardTable({ teams, roundNames = [], bonusNames = 
                   </div>
 
                   {/* Team Name */}
-                  <div className={`flex-1 min-w-0 flex items-center gap-2 font-hero text-2xl ${textTone(rank)}`}>
+                  <div className={`flex-1 min-w-0 flex items-center gap-2 font-hero text-xl sm:text-2xl ${textTone(rank)}`}>
                     <div className="flex-shrink-0 flex items-center">
                       <MedalEmoji rank={rank} />
                     </div>
@@ -230,7 +230,7 @@ export default function LeaderboardTable({ teams, roundNames = [], bonusNames = 
                       initial={{ scale: 1.4 }}
                       animate={{ scale: 1 }}
                       transition={{ type: 'spring', stiffness: 400 }}
-                      className={`font-hero text-4xl tabular-nums inline-block ${scoreTone(rank)} ${rank === 1 ? 'bg-white px-2 border-2 border-neo-black shadow-[2px_2px_0_#111] -rotate-2' : ''}`}
+                      className={`font-hero text-3xl sm:text-4xl tabular-nums inline-block ${scoreTone(rank)} ${rank === 1 ? 'bg-white px-2 border-2 border-neo-black shadow-[2px_2px_0_#111] -rotate-2' : ''}`}
                     >
                       {team.total}
                     </motion.span>
@@ -285,4 +285,3 @@ export default function LeaderboardTable({ teams, roundNames = [], bonusNames = 
     </div>
   )
 }
-

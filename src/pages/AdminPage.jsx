@@ -534,9 +534,9 @@ export default function AdminPage() {
   })
 
   return (
-    <div className="min-h-screen bg-neo-white relative overflow-hidden text-neo-black">
+    <div className="min-h-screen bg-neo-white relative overflow-x-hidden text-neo-black">
       <div className="absolute inset-0 bg-[linear-gradient(rgba(17,17,17,0.05)_2px,transparent_2px),linear-gradient(90deg,rgba(17,17,17,0.05)_2px,transparent_2px)] bg-[size:32px_32px] pointer-events-none"></div>
-      <MotionDiv initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="mx-auto max-w-6xl px-4 py-10 relative z-10">
+      <MotionDiv initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="mx-auto max-w-6xl px-3 sm:px-4 py-10 relative z-10">
         
         {/* Header */}
         <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-12 border-b-4 border-neo-black pb-8">
@@ -545,7 +545,7 @@ export default function AdminPage() {
               <span className="w-3 h-3 rounded-full border-4 border-neo-black bg-neo-yellow"></span>
               ORGANIZER DASHBOARD
             </div>
-            <h1 className="font-hero text-[4rem] lg:text-[5rem] tracking-tight text-neo-black uppercase leading-[0.85]">
+            <h1 className="font-hero text-[2.8rem] sm:text-[4rem] lg:text-[5rem] tracking-tight text-neo-black uppercase leading-[0.9] sm:leading-[0.85]">
               <span className="block">ADMIN</span>
               <span className="inline-block bg-neo-yellow border-[4px] border-neo-black px-4 my-2 shadow-[6px_6px_0_#111] -rotate-2">
                 PANEL
@@ -553,13 +553,13 @@ export default function AdminPage() {
             </h1>
           </div>
           <div className="flex gap-4 items-center flex-wrap justify-end mt-4">
-            <Link to="/dashboard" className="font-black text-sm border-4 border-neo-black bg-white px-6 py-3 uppercase tracking-widest text-neo-black shadow-[4px_4px_0_#111] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_#111] transition-all flex items-center gap-2">&larr; Dash</Link>
-            {canUseAdmin && <Link to={`/${hackathonId}/podium`} className="font-black text-sm border-4 border-neo-black bg-white px-6 py-3 uppercase tracking-widest text-neo-black shadow-[4px_4px_0_#111] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_#111] transition-all">🏆 Podium</Link>}
-            <Link to={`/${hackathonId}`} className="font-black text-sm border-4 border-neo-black bg-neo-yellow px-6 py-3 uppercase tracking-widest text-neo-black shadow-[4px_4px_0_#111] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_#111] transition-all">Public</Link>
+            <Link to="/dashboard" className="font-black text-xs sm:text-sm border-4 border-neo-black bg-white px-3 sm:px-6 py-3 uppercase tracking-wide sm:tracking-widest text-neo-black shadow-[4px_4px_0_#111] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_#111] transition-all flex items-center gap-2">&larr; Dash</Link>
+            {canUseAdmin && <Link to={`/${hackathonId}/podium`} className="font-black text-xs sm:text-sm border-4 border-neo-black bg-white px-3 sm:px-6 py-3 uppercase tracking-wide sm:tracking-widest text-neo-black shadow-[4px_4px_0_#111] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_#111] transition-all">🏆 Podium</Link>}
+            <Link to={`/${hackathonId}`} className="font-black text-xs sm:text-sm border-4 border-neo-black bg-neo-yellow px-3 sm:px-6 py-3 uppercase tracking-wide sm:tracking-widest text-neo-black shadow-[4px_4px_0_#111] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_#111] transition-all">Public</Link>
             {user && (
               <>
                 <SoundToggleButton />
-                <button onClick={() => signOut(auth)} className="font-black text-sm border-4 border-neo-black bg-neo-black px-6 py-3 uppercase tracking-widest text-neo-white shadow-[4px_4px_0_#FFD600] hover:-translate-y-1 transition-all">Sign out</button>
+                <button onClick={() => signOut(auth)} className="font-black text-xs sm:text-sm border-4 border-neo-black bg-neo-black px-3 sm:px-6 py-3 uppercase tracking-wide sm:tracking-widest text-neo-white shadow-[4px_4px_0_#FFD600] hover:-translate-y-1 transition-all">Sign out</button>
               </>
             )}
           </div>
@@ -730,7 +730,7 @@ export default function AdminPage() {
 
                 <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b-4 border-neo-black pb-6">
                   <div>
-                    <h2 className="font-mono font-black text-5xl uppercase text-neo-black" style={{ textShadow: "3px 3px 0px #FFD600" }}>Assign Values</h2>
+                    <h2 className="font-mono font-black text-3xl sm:text-5xl uppercase text-neo-black" style={{ textShadow: "3px 3px 0px #FFD600" }}>Assign Values</h2>
                     <p className="text-neo-black font-bold tracking-widest uppercase text-sm mt-2">Inject external bonuses per team</p>
                   </div>
                   
@@ -748,7 +748,7 @@ export default function AdminPage() {
                     <button
                       disabled={busy}
                       onClick={handleSaveAllBonuses}
-                      className="whitespace-nowrap border-4 border-neo-black bg-neo-yellow px-8 py-3 font-hero text-2xl tracking-widest uppercase text-neo-white transition hover:-translate-y-1 shadow-[4px_4px_0_#111] hover:shadow-[6px_6px_0_#00F0FF] disabled:opacity-50"
+                      className="border-4 border-neo-black bg-neo-yellow px-4 sm:px-8 py-3 font-hero text-lg sm:text-2xl tracking-wide sm:tracking-widest uppercase text-neo-white transition hover:-translate-y-1 shadow-[4px_4px_0_#111] hover:shadow-[6px_6px_0_#00F0FF] disabled:opacity-50"
                     >
                       SAVE ALL BONUSES
                     </button>
@@ -1339,7 +1339,7 @@ export default function AdminPage() {
           </div>
         )}
         {toast && (
-          <div className={`fixed bottom-6 right-6 z-50 border-4 px-6 py-4 font-bold shadow-brutal ${toast.type==='error'?'bg-neo-red':'bg-neo-yellow text-neo-white'}`}>
+          <div className={`fixed bottom-4 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 z-50 border-4 px-4 sm:px-6 py-3 sm:py-4 font-bold shadow-brutal break-words ${toast.type==='error'?'bg-neo-red':'bg-neo-yellow text-neo-white'}`}>
             {toast.message}
           </div>
         )}
@@ -1391,5 +1391,3 @@ export default function AdminPage() {
     </div>
   )
 }
-
-

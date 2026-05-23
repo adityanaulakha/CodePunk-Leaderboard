@@ -77,19 +77,19 @@ export default function LandingPage() {
     <div className="min-h-screen bg-neo-white flex flex-col font-base text-neo-black overflow-x-hidden selection:bg-neo-yellow selection:text-neo-black">
 
       {/* Navigation */}
-      <nav className={`w-full flex items-center justify-between px-6 py-4 border-b-4 border-neo-black bg-neo-white z-50 fixed top-0 transition-all duration-300 ${isScrolled ? 'shadow-[4px_4px_0_#111] py-3 bg-white' : ''}`}>
+      <nav className={`w-full max-w-full flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b-4 border-neo-black bg-neo-white z-50 fixed top-0 transition-all duration-300 ${isScrolled ? 'shadow-[4px_4px_0_#111] py-2.5 sm:py-3 bg-white' : ''}`}>
         <div
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           className="font-hero text-2xl lg:text-3xl font-black tracking-widest flex items-center gap-2 relative z-10 hover:scale-105 transition-transform cursor-pointer"
         >
-          <img src="/Lead-X.png" alt="LeadX Logo" className="h-12 lg:h-16 drop-shadow-[2px_2px_0_#111]" />
+          <img src="/Lead-X.png" alt="LeadX Logo" className="h-10 sm:h-12 lg:h-16 drop-shadow-[2px_2px_0_#111]" />
         </div>
         <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-8 font-black uppercase text-sm tracking-wider">
           <a href="#features" className="hover:text-neo-yellow transition-colors underline-offset-4 hover:underline">Features</a>
           <a href="#workflow" className="hover:text-neo-yellow transition-colors underline-offset-4 hover:underline">Workflow</a>
           <a href="#testimonials" className="hover:text-neo-yellow transition-colors underline-offset-4 hover:underline">Wall of Love</a>
         </div>
-        <div className="flex items-center gap-4 lg:gap-8 relative z-10">
+        <div className="flex items-center gap-2 sm:gap-4 lg:gap-8 relative z-10">
           {user ? (
             <>
               <button onClick={() => signOut(auth)} className="font-black text-sm lg:text-base uppercase tracking-widest hover:text-neo-red transition-colors hidden sm:block">
@@ -97,7 +97,7 @@ export default function LandingPage() {
               </button>
               <Link
                 to="/dashboard"
-                className="font-black text-sm lg:text-base uppercase tracking-widest bg-neo-yellow border-4 border-neo-black px-6 py-2 shadow-[4px_4px_0_#111] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all flex items-center gap-2"
+                className="font-black text-xs sm:text-sm lg:text-base uppercase tracking-wider sm:tracking-widest bg-neo-yellow border-4 border-neo-black px-3 sm:px-6 py-2 shadow-[4px_4px_0_#111] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all flex items-center gap-2"
               >
                 DASHBOARD
               </Link>
@@ -109,7 +109,7 @@ export default function LandingPage() {
               </Link>
               <Link
                 to="/login?mode=signup"
-                className="font-black text-sm lg:text-base uppercase tracking-widest bg-neo-yellow border-4 border-neo-black px-6 py-2 shadow-[4px_4px_0_#111] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all flex items-center gap-2"
+                className="font-black text-xs sm:text-sm lg:text-base uppercase tracking-wider sm:tracking-widest bg-neo-yellow border-4 border-neo-black px-3 sm:px-6 py-2 shadow-[4px_4px_0_#111] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all flex items-center gap-2"
               >
                 GET STARTED
               </Link>
@@ -149,7 +149,7 @@ export default function LandingPage() {
           </motion.div>
 
           {/* Headline */}
-          <motion.h1 variants={fadeUp} className="font-hero text-[4rem] sm:text-[6rem] lg:text-[7.5rem] xl:text-[9rem] leading-[0.85] tracking-tight uppercase text-neo-black flex flex-col items-center z-10 relative">
+          <motion.h1 variants={fadeUp} className="font-hero text-[2.8rem] sm:text-[4.5rem] md:text-[6rem] lg:text-[7.5rem] xl:text-[9rem] leading-[0.9] sm:leading-[0.85] tracking-tight uppercase text-neo-black flex flex-col items-center z-10 relative">
             <span className="block drop-shadow-[4px_4px_0_#FFF] relative">
               <span className="absolute -inset-1 text-neo-yellow opacity-50 blur-sm mix-blend-multiply pointer-events-none">COMPETITIVE</span>
               COMPETITIVE
@@ -167,7 +167,7 @@ export default function LandingPage() {
 
           {/* Subheadline & Social Proof */}
           <motion.div variants={fadeUp} className="mt-12 max-w-3xl px-4 text-center z-10 flex flex-col items-center">
-            <p className="text-lg sm:text-2xl font-bold leading-relaxed text-zinc-800 tracking-wider">
+            <p className="text-base sm:text-2xl font-bold leading-relaxed text-zinc-800 tracking-wide sm:tracking-wider">
               Never lose track of live ranks, judge evaluations, or dynamic leaderboards. Standardize your competitive events with absolute precision and raw efficiency.
             </p>
 
@@ -210,17 +210,17 @@ export default function LandingPage() {
             variants={fadeUp}
             className="mt-12 w-full max-w-xl px-4 z-10"
           >
-            <form onSubmit={handleFindLeaderboard} className="flex border-4 border-neo-black bg-white shadow-[6px_6px_0_#FFD600] hover:-translate-y-1 hover:shadow-[8px_8px_0_#FFD600] transition-all relative group rounded-none">
+            <form onSubmit={handleFindLeaderboard} className="flex flex-col sm:flex-row border-4 border-neo-black bg-white shadow-[6px_6px_0_#FFD600] hover:-translate-y-1 hover:shadow-[8px_8px_0_#FFD600] transition-all relative group rounded-none">
               <input
                 type="text"
                 value={eventCode}
                 onChange={(e) => setEventCode(e.target.value)}
                 placeholder="ENTER EVENT CODE (e.g. code-punk)"
-                className="flex-1 px-5 py-4 font-black text-neo-black placeholder-zinc-500 uppercase tracking-wider outline-none text-sm sm:text-base border-r-4 border-neo-black bg-white rounded-none"
+                className="flex-1 px-4 sm:px-5 py-4 font-black text-neo-black placeholder-zinc-500 uppercase tracking-wide sm:tracking-wider outline-none text-xs sm:text-base border-b-4 sm:border-b-0 sm:border-r-4 border-neo-black bg-white rounded-none"
               />
               <button
                 type="submit"
-                className="bg-neo-yellow px-6 py-4 font-hero text-lg uppercase tracking-widest text-neo-black hover:bg-neo-black hover:text-white transition-colors cursor-pointer flex items-center gap-2 rounded-none border-0"
+                className="w-full sm:w-auto bg-neo-yellow px-6 py-4 font-hero text-lg uppercase tracking-wide sm:tracking-widest text-neo-black hover:bg-neo-black hover:text-white transition-colors cursor-pointer flex items-center justify-center gap-2 rounded-none border-0"
               >
                 FIND ⚡
               </button>
@@ -295,17 +295,10 @@ export default function LandingPage() {
       <section className="w-full bg-neo-yellow border-y-4 border-neo-black py-12 overflow-hidden relative">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(17,17,17,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(17,17,17,0.03)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none"></div>
         <div className="text-center font-black uppercase tracking-[0.2em] text-neo-black mb-8 text-xs sm:text-sm relative z-10">EMPOWERING ELITE COMPETITIONS & HACKATHONS</div>
-        <div className="w-full relative flex z-10">
-          <div className="flex whitespace-nowrap animate-marquee items-center gap-6">
+        <div className="w-full relative z-10 overflow-hidden">
+          <div className="flex w-max whitespace-nowrap animate-marquee items-center gap-6">
             {[...trustedBy, ...trustedBy].map((brand, i) => (
-              <span key={i} className={`font-hero text-lg sm:text-2xl uppercase tracking-widest px-6 py-3 border-4 border-neo-black shadow-[4px_4px_0_#111] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all cursor-pointer ${brand.color}`}>
-                ⚡ {brand.name}
-              </span>
-            ))}
-          </div>
-          <div className="flex whitespace-nowrap animate-marquee items-center gap-6" aria-hidden="true">
-            {[...trustedBy, ...trustedBy].map((brand, i) => (
-              <span key={i + 'dup'} className={`font-hero text-lg sm:text-2xl uppercase tracking-widest px-6 py-3 border-4 border-neo-black shadow-[4px_4px_0_#111] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all cursor-pointer ${brand.color}`}>
+              <span key={i} className={`shrink-0 font-hero text-base sm:text-2xl uppercase tracking-wide sm:tracking-widest px-3 sm:px-6 py-3 border-4 border-neo-black shadow-[4px_4px_0_#111] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all cursor-pointer ${brand.color}`}>
                 ⚡ {brand.name}
               </span>
             ))}
@@ -556,15 +549,15 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-[linear-gradient(rgba(17,17,17,0.04)_2px,transparent_2px),linear-gradient(90deg,rgba(17,17,17,0.04)_2px,transparent_2px)] bg-[size:24px_24px] pointer-events-none"></div>
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center relative z-10">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-left flex flex-col items-start">
-            <h2 className="font-hero text-6xl sm:text-8xl uppercase text-neo-black drop-shadow-[4px_4px_0_#FFF] leading-none mb-6">
+            <h2 className="font-hero text-4xl sm:text-8xl uppercase text-neo-black drop-shadow-[4px_4px_0_#FFF] leading-none mb-6">
               UPGRADE <br /> YOUR EVENT.
             </h2>
-            <p className="font-bold text-lg sm:text-xl uppercase tracking-widest text-neo-black mb-8 max-w-md leading-relaxed">
+            <p className="font-bold text-base sm:text-xl uppercase tracking-wide sm:tracking-widest text-neo-black mb-8 max-w-md leading-relaxed">
               Stop using legacy spreadsheets. Standardize on the robust scoring network engineered for hackathons, design challenges, and competitive sprints.
             </p>
             <Link
               to="/login?mode=signup"
-              className="font-hero text-2xl sm:text-4xl uppercase tracking-widest bg-neo-black text-neo-white border-4 border-neo-black px-10 py-5 shadow-[8px_8px_0_#FFF] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
+              className="font-hero text-xl sm:text-4xl uppercase tracking-wide sm:tracking-widest bg-neo-black text-neo-white border-4 border-neo-black px-6 sm:px-10 py-4 sm:py-5 shadow-[8px_8px_0_#FFF] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
             >
               GET DEPLOYED &rarr;
             </Link>
@@ -589,7 +582,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer - Full Professional Multi-Column */}
-      <footer className="w-full border-t-4 border-neo-black bg-white py-16 px-8 relative z-20">
+      <footer className="w-full border-t-4 border-neo-black bg-white py-16 px-4 sm:px-8 relative z-20">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div className="flex flex-col items-start gap-4 md:col-span-3">
             <img

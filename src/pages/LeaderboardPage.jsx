@@ -28,7 +28,7 @@ function CategoryTabs({ current, onChange, tracks = [] }) {
         <button
           key={t.id}
           onClick={() => onChange(t.id)}
-          className={`flex-1 px-6 py-3 font-hero text-2xl uppercase transition-colors whitespace-nowrap ${
+          className={`w-full sm:w-auto sm:flex-1 px-3 sm:px-6 py-2 sm:py-3 font-hero text-base sm:text-2xl uppercase transition-colors whitespace-normal sm:whitespace-nowrap break-words ${
             current === t.id 
               ? 'bg-neo-black text-neo-yellow' 
               : 'text-neo-black hover:bg-neo-lightgray'
@@ -130,7 +130,7 @@ export default function LeaderboardPage() {
               )}
             </div>
             
-            <h1 className="font-hero text-[4rem] sm:text-[5rem] lg:text-[7rem] tracking-tight uppercase leading-[0.85] text-neo-black">
+            <h1 className="font-hero text-[2.8rem] sm:text-[5rem] lg:text-[7rem] tracking-tight uppercase leading-[0.9] sm:leading-[0.85] text-neo-black">
               <span className="block">GLOBAL</span>
               <span className="inline-block bg-neo-yellow border-[4px] sm:border-[6px] border-neo-black px-4 sm:px-6 my-2 shadow-[8px_8px_0_#111] -rotate-1">
                 RANKS
@@ -140,7 +140,7 @@ export default function LeaderboardPage() {
 
           <div className="flex flex-col gap-4 items-start md:items-end w-full md:w-auto">
              <CategoryTabs current={track} onChange={setTrack} tracks={tracks} />
-             <div className="border-4 border-neo-black bg-white px-4 py-2 font-black text-xs uppercase tracking-[0.2em] shadow-[4px_4px_0_#111] flex items-center gap-3 w-full md:w-auto justify-center">
+             <div className="border-4 border-neo-black bg-white px-4 py-2 font-black text-xs uppercase tracking-wide sm:tracking-[0.2em] shadow-[4px_4px_0_#111] flex items-center gap-3 w-full md:w-auto justify-center">
                 <span>TOTAL TEAMS:</span>
                 <span className="text-neo-yellow text-xl drop-shadow-[1px_1px_0_#111]">{filteredTeams.length}</span>
              </div>
@@ -150,7 +150,7 @@ export default function LeaderboardPage() {
         {/* Main Content */}
         <div className="flex-1">
           {filteredTeams.length === 0 ? (
-            <div className="border-4 border-dashed border-neo-black p-16 text-center bg-white/50 shadow-[12px_12px_0_#111]">
+            <div className="border-4 border-dashed border-neo-black p-8 sm:p-16 text-center bg-white/50 shadow-[12px_12px_0_#111]">
                <div className="w-20 h-20 mx-auto bg-neo-lightgray border-4 border-neo-black rounded-full flex items-center justify-center mb-6">
                  <span className="text-3xl">📡</span>
                </div>
@@ -170,8 +170,8 @@ export default function LeaderboardPage() {
 
       {/* Footer Banner */}
       <div className="border-t-4 border-neo-black bg-neo-black py-3 mt-12 relative z-20">
-         <div className="flex justify-between items-center px-6 max-w-[1400px] mx-auto">
-           <div className="font-black text-[10px] text-neo-white uppercase tracking-[0.3em]">
+         <div className="flex justify-between items-center px-3 sm:px-6 max-w-[1400px] mx-auto gap-3">
+           <div className="font-black text-[10px] text-neo-white uppercase tracking-[0.12em] sm:tracking-[0.3em] break-words">
              SYS.OP.NORMAL // SECURE CONNECTION
            </div>
            <div className="flex gap-2">

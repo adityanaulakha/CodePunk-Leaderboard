@@ -150,7 +150,7 @@ export default function AuthPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-lg bg-white border-4 border-neo-black shadow-[12px_12px_0_#111] p-8 sm:p-12 relative z-10"
+        className="w-full max-w-lg bg-white border-4 border-neo-black shadow-[8px_8px_0_#111] sm:shadow-[12px_12px_0_#111] p-5 sm:p-12 relative z-10"
       >
         {/* Mobile-Safe Logo (Hidden on Desktop) */}
         <Link to="/" className="flex md:hidden mb-6 hover:scale-[1.02] transition-transform w-max">
@@ -162,7 +162,7 @@ export default function AuthPage() {
           {isSignUp ? 'NEW ORGANIZER' : 'SECURE LOGIN'}
         </div>
 
-        <h2 className="font-hero text-5xl sm:text-6xl tracking-tight mb-8 uppercase leading-none">
+        <h2 className="font-hero text-4xl sm:text-6xl tracking-tight mb-8 uppercase leading-none">
           {isSignUp ? 'START' : 'WELCOME'} <br /> 
           <span className={isSignUp ? 'bg-neo-yellow px-2 border-4 border-neo-black inline-block mt-2 shadow-[6px_6px_0_#111] -rotate-2' : 'inline-block mt-2'}>{isSignUp ? 'HERE.' : 'BACK.'}</span>
         </h2>
@@ -173,7 +173,7 @@ export default function AuthPage() {
             type="button"
             onClick={() => signInWithOAuth(googleProvider)}
             disabled={status.type === 'loading'}
-            className="w-full bg-white border-4 border-neo-black px-4 sm:px-6 py-3 sm:py-4 font-hero text-base sm:text-xl lg:text-2xl tracking-wider sm:tracking-widest uppercase text-neo-black flex items-center justify-center gap-2 sm:gap-3 hover:-translate-y-1 active:translate-y-0.5 active:shadow-none transition-all shadow-[4px_4px_0_#111] cursor-pointer disabled:opacity-50 whitespace-nowrap"
+            className="w-full bg-white border-4 border-neo-black px-4 sm:px-6 py-3 sm:py-4 font-hero text-sm sm:text-xl lg:text-2xl tracking-wide sm:tracking-widest uppercase text-neo-black flex items-center justify-center gap-2 sm:gap-3 hover:-translate-y-1 active:translate-y-0.5 active:shadow-none transition-all shadow-[4px_4px_0_#111] cursor-pointer disabled:opacity-50 text-center leading-tight"
           >
             <svg className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12.545 11.033v4.354h7.364c-.26 1.895-2.284 5.543-7.364 5.543-4.39 0-7.966-3.64-7.966-8.121 0-4.481 3.576-8.121 7.966-8.121 2.5 0 4.17 1.048 5.127 1.967l3.423-3.379c-2.2-2.057-5.287-3.307-8.55-3.307-7.18 0-13 5.82-13 13s5.82 13 13 13c7.5 0 12.48-5.276 12.48-12.69 0-.854-.09-1.5-.2-2.13h-12.28z"/></svg>
             CONTINUE WITH GOOGLE
@@ -221,7 +221,7 @@ export default function AuthPage() {
           <button
             type="submit"
             disabled={!canSubmit || status.type === 'loading'}
-            className="w-full mt-6 bg-neo-black border-4 border-neo-black px-6 py-5 font-hero text-3xl tracking-[0.2em] uppercase text-neo-white transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none shadow-[6px_6px_0_#FFD600] disabled:opacity-50 disabled:hover:-translate-x-0 disabled:hover:-translate-y-0 disabled:hover:shadow-[6px_6px_0_#FFD600] group relative overflow-hidden"
+            className="w-full mt-6 bg-neo-black border-4 border-neo-black px-6 py-5 font-hero text-2xl sm:text-3xl tracking-[0.12em] sm:tracking-[0.2em] uppercase text-neo-white transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none shadow-[6px_6px_0_#FFD600] disabled:opacity-50 disabled:hover:-translate-x-0 disabled:hover:-translate-y-0 disabled:hover:shadow-[6px_6px_0_#FFD600] group relative overflow-hidden"
           >
             <div className="absolute inset-0 bg-neo-yellow translate-y-[100%] group-hover:translate-y-0 transition-transform duration-300 ease-out z-0"></div>
             <span className="relative z-10 group-hover:text-neo-black transition-colors">{status.type === 'loading' ? 'PROCESSING...' : (isSignUp ? 'CREATE ACCOUNT' : 'LOG IN')}</span>
@@ -278,4 +278,3 @@ export default function AuthPage() {
     </div>
   )
 }
-

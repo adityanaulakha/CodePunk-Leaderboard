@@ -115,9 +115,9 @@ export default function JudgePage() {
   }
 
   return (
-    <div className="min-h-screen bg-neo-white relative overflow-hidden text-neo-black">
+    <div className="min-h-screen bg-neo-white relative overflow-x-hidden text-neo-black">
       <div className="absolute inset-0 bg-[linear-gradient(rgba(17,17,17,0.05)_2px,transparent_2px),linear-gradient(90deg,rgba(17,17,17,0.05)_2px,transparent_2px)] bg-[size:32px_32px] pointer-events-none"></div>
-      <MotionDiv initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="mx-auto max-w-6xl px-4 py-10 relative z-10">
+      <MotionDiv initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="mx-auto max-w-6xl px-3 sm:px-4 py-10 relative z-10">
         
         {/* Header */}
         <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-8">
@@ -128,7 +128,7 @@ export default function JudgePage() {
             <div className="relative">
               <div className="absolute -left-4 top-0 w-1 h-full bg-neo-yellow shadow-brutal"></div>
               <div className="text-xs font-bold uppercase tracking-[0.3em] text-neo-black">Evaluator Access</div>
-              <h1 className="mt-2 font-hero text-5xl tracking-widest text-neo-black uppercase drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">Judge Portal</h1>
+              <h1 className="mt-2 font-hero text-3xl sm:text-5xl tracking-[0.14em] sm:tracking-widest text-neo-black uppercase drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">Judge Portal</h1>
             </div>
           </div>
           <div className="flex gap-4 items-center flex-wrap justify-end">
@@ -140,13 +140,13 @@ export default function JudgePage() {
                 </button>
               </span>
             )}
-            <Link to={`/${hackathonId}`} className="font-black text-sm border-4 border-neo-black bg-neo-yellow px-6 py-3 uppercase tracking-widest text-neo-black shadow-[4px_4px_0_#111] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_#111] transition-all flex items-center h-12">
+            <Link to={`/${hackathonId}`} className="font-black text-xs sm:text-sm border-4 border-neo-black bg-neo-yellow px-3 sm:px-6 py-3 uppercase tracking-wide sm:tracking-widest text-neo-black shadow-[4px_4px_0_#111] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_#111] transition-all flex items-center h-12">
               Public Leaderboard
             </Link>
             {user && (
               <>
                 <SoundToggleButton />
-                <button onClick={() => signOut(auth)} className="font-black text-sm border-4 border-neo-black bg-neo-black px-6 py-3 uppercase tracking-widest text-neo-white shadow-[4px_4px_0_#FFD600] hover:-translate-y-1 transition-all h-12">
+                <button onClick={() => signOut(auth)} className="font-black text-xs sm:text-sm border-4 border-neo-black bg-neo-black px-3 sm:px-6 py-3 uppercase tracking-wide sm:tracking-widest text-neo-white shadow-[4px_4px_0_#FFD600] hover:-translate-y-1 transition-all h-12">
                   Sign Out
                 </button>
               </>
@@ -180,7 +180,7 @@ export default function JudgePage() {
             <p className="text-neo-black">
               You are an Organizer, not a Judge. Please head over to the Admin Panel.
             </p>
-            <Link to={`/${hackathonId}/admin`} className="inline-block bg-neo-yellow border-4 border-neo-black text-neo-black px-6 py-3 font-hero text-2xl uppercase tracking-widest hover:scale-105 transition-transform text-center shadow-[4px_4px_0_#111] max-w-xs">
+            <Link to={`/${hackathonId}/admin`} className="inline-block bg-neo-yellow border-4 border-neo-black text-neo-black px-6 py-3 font-hero text-xl sm:text-2xl uppercase tracking-wide sm:tracking-widest hover:scale-105 transition-transform text-center shadow-[4px_4px_0_#111] max-w-xs">
               Go to Admin Panel
             </Link>
           </div>
@@ -192,14 +192,14 @@ export default function JudgePage() {
             <div className="p-6 md:p-8 border-b-4 border-neo-black flex flex-col gap-6">
               <div>
                  <div className="absolute top-0 right-0 w-32 h-32 bg-neo-yellow/10 rounded-full blur-3xl pointer-events-none"></div>
-                 <h2 className="font-hero text-5xl uppercase text-neo-black drop-shadow-[3px_3px_0_#111] tracking-wider relative z-10">{judgeName}</h2>
+                 <h2 className="font-hero text-3xl sm:text-5xl uppercase text-neo-black drop-shadow-[3px_3px_0_#111] tracking-wide sm:tracking-wider relative z-10 break-words">{judgeName}</h2>
                  <p className="text-neo-black font-bold tracking-widest uppercase text-sm mt-2 relative z-10">Live Evaluation Dashboard</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 z-10 relative mt-2">
                 <select 
                    value={trackFilter} 
                    onChange={e => { setTrackFilter(e.target.value); setRoundFilter('all'); }} 
-                   className="w-full border-4 border-neo-black bg-neo-white px-4 py-3 font-hero text-xl text-neo-black outline-none focus:border-neo-black shadow-brutal uppercase cursor-pointer"
+                   className="w-full border-4 border-neo-black bg-neo-white px-4 py-3 font-hero text-base sm:text-xl text-neo-black outline-none focus:border-neo-black shadow-brutal uppercase cursor-pointer"
                 >
                   {tracks?.map(t => (
                     <option key={t.id} value={t.id}>{t.name.toUpperCase()}</option>
@@ -208,7 +208,7 @@ export default function JudgePage() {
                 <select 
                    value={roundFilter} 
                    onChange={e => setRoundFilter(e.target.value)} 
-                   className="w-full border-4 border-neo-black bg-neo-white px-4 py-3 font-hero text-xl text-neo-black outline-none focus:border-neo-black shadow-brutal uppercase cursor-pointer"
+                   className="w-full border-4 border-neo-black bg-neo-white px-4 py-3 font-hero text-base sm:text-xl text-neo-black outline-none focus:border-neo-black shadow-brutal uppercase cursor-pointer"
                 >
                   <option value="all">ALL ROUNDS</option>
                   {activeRoundNames.map(r => <option key={r} value={r}>{r}</option>)}
@@ -216,13 +216,13 @@ export default function JudgePage() {
                 <select 
                    value={evaluationFilter} 
                    onChange={e => setEvaluationFilter(e.target.value)} 
-                   className="w-full border-4 border-neo-black bg-neo-white px-4 py-3 font-hero text-xl text-neo-black outline-none focus:border-neo-black shadow-brutal uppercase cursor-pointer"
+                   className="w-full border-4 border-neo-black bg-neo-white px-4 py-3 font-hero text-base sm:text-xl text-neo-black outline-none focus:border-neo-black shadow-brutal uppercase cursor-pointer"
                 >
                   <option value="all">ALL STATUS</option>
                   <option value="pending">PENDING</option>
                   <option value="completed">COMPLETED</option>
                 </select>
-                <input type="text" placeholder="Search..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full border-4 border-neo-black bg-neo-white px-4 py-3 font-hero text-xl text-neo-black outline-none focus:border-neo-black shadow-brutal uppercase" />
+                <input type="text" placeholder="Search..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full border-4 border-neo-black bg-neo-white px-4 py-3 font-hero text-base sm:text-xl text-neo-black outline-none focus:border-neo-black shadow-brutal uppercase" />
               </div>
             </div>
             
@@ -263,7 +263,7 @@ export default function JudgePage() {
                          return (
                            <div key={rname} className="flex flex-col border-b-4 border-neo-black bg-neo-white/20 last:border-0 relative">
                               <div className="p-4 bg-white border-b-4 border-neo-black flex justify-between items-center z-10 shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
-                                <span className="font-hero text-2xl uppercase tracking-widest text-neo-black">{rname}</span>
+                                <span className="font-hero text-xl sm:text-2xl uppercase tracking-wide sm:tracking-widest text-neo-black break-words">{rname}</span>
                                 <div className="flex gap-2 items-center">
                                   {lockedRounds.includes(`${trackFilter}_${rname}`) && (
                                      <span className="text-neo-red text-xs font-black tracking-widest uppercase border border-neo-black px-2 py-1 bg-neo-red/10 flex items-center gap-1">
@@ -342,7 +342,7 @@ export default function JudgePage() {
         )}
 
         {toast && (
-          <div className={`fixed bottom-6 right-6 z-50 border-4 px-6 py-4 font-bold shadow-brutal ${toast.type==='error'?'bg-neo-red':'bg-neo-yellow text-neo-white'}`}>
+          <div className={`fixed bottom-4 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 z-50 border-4 px-4 sm:px-6 py-3 sm:py-4 font-bold shadow-brutal break-words ${toast.type==='error'?'bg-neo-red':'bg-neo-yellow text-neo-white'}`}>
             {toast.message}
           </div>
         )}

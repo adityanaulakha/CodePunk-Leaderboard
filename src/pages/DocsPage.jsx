@@ -2,21 +2,21 @@ import { Link } from 'react-router-dom'
 
 export default function DocsPage() {
   return (
-    <div className="min-h-screen bg-[#F4F4F0] flex flex-col font-base text-[#111] selection:bg-[#FFD600] selection:text-[#111]">
-      <nav className="w-full flex items-center justify-between px-8 py-5 border-b-2 border-[#111] bg-[#F4F4F0]">
+    <div className="min-h-screen bg-[#F4F4F0] flex flex-col font-base text-[#111] selection:bg-[#FFD600] selection:text-[#111] overflow-x-hidden">
+      <nav className="w-full flex flex-col sm:flex-row items-center justify-between px-4 sm:px-8 py-5 border-b-2 border-[#111] bg-[#F4F4F0] gap-3 sm:gap-0">
         <Link to="/" className="font-hero text-2xl font-bold tracking-widest flex items-center gap-2 hover:scale-105 transition-transform">
           LEADERBOARD
         </Link>
-        <div className="flex items-center gap-8">
-          <Link to="/login" className="font-bold text-sm uppercase tracking-widest bg-[#FFD600] border-2 border-[#111] px-6 py-2 shadow-[4px_4px_0_#111] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+        <div className="flex items-center gap-4 sm:gap-8">
+          <Link to="/login" className="font-bold text-xs sm:text-sm uppercase tracking-wide sm:tracking-widest bg-[#FFD600] border-2 border-[#111] px-4 sm:px-6 py-2 shadow-[4px_4px_0_#111] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
             GET STARTED
           </Link>
         </div>
       </nav>
 
-      <main className="flex-1 max-w-4xl mx-auto w-full p-8 py-20">
-        <h1 className="font-hero text-6xl tracking-tight uppercase mb-8">Documentation</h1>
-        <div className="border-2 border-[#111] bg-white p-8 shadow-[8px_8px_0_#111]">
+      <main className="flex-1 max-w-4xl mx-auto w-full p-4 sm:p-8 py-12 sm:py-20">
+        <h1 className="font-hero text-4xl sm:text-6xl tracking-tight uppercase mb-8">Documentation</h1>
+        <div className="border-2 border-[#111] bg-white p-5 sm:p-8 shadow-[8px_8px_0_#111]">
           <h2 className="font-hero text-3xl mb-4">Welcome to Leaderboard</h2>
           <p className="text-lg font-medium leading-relaxed mb-6">
             This platform allows you to spin up isolated, multi-tenant scoring environments for your events. It supports real-time synchronization, distinct hardware/software tracks, and dynamic rubrics.

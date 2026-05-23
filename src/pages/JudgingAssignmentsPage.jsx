@@ -114,16 +114,16 @@ export default function JudgingAssignmentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neo-white text-neo-black font-base relative overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-neo-white text-neo-black font-base relative overflow-x-hidden flex flex-col">
       <div className="absolute inset-0 bg-[linear-gradient(rgba(17,17,17,0.05)_2px,transparent_2px),linear-gradient(90deg,rgba(17,17,17,0.05)_2px,transparent_2px)] bg-[size:32px_32px] pointer-events-none"></div>
 
-      <nav className="w-full flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-b-4 border-neo-black bg-neo-white relative z-20 gap-4 sm:gap-0">
+      <nav className="w-full flex flex-col sm:flex-row items-center justify-between px-3 sm:px-6 py-4 border-b-4 border-neo-black bg-neo-white relative z-20 gap-4 sm:gap-0">
         <div className="absolute top-0 right-0 w-32 h-32 bg-neo-yellow/10 rounded-full blur-3xl pointer-events-none"></div>
         <Link to="/" className="font-hero text-2xl lg:text-3xl font-black tracking-widest flex items-center gap-2 hover:scale-105 transition-transform">
             <img src="/Lead-X.png" alt="LeadX Logo" className="h-12 lg:h-16 drop-shadow-[2px_2px_0_#111]" />
         </Link>
         <div className="flex items-center gap-4 flex-wrap justify-center">
-          <Link to="/dashboard" className="font-black text-sm uppercase tracking-widest border-4 border-neo-black bg-white px-6 py-3 shadow-[4px_4px_0_#111] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+          <Link to="/dashboard" className="font-black text-xs sm:text-sm uppercase tracking-wide sm:tracking-widest border-4 border-neo-black bg-white px-3 sm:px-6 py-3 shadow-[4px_4px_0_#111] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
             &larr; ORGANIZER DASH
           </Link>
           <span className="font-black uppercase text-xs tracking-[0.2em] bg-neo-yellow border-4 border-neo-black px-4 py-2 shadow-[4px_4px_0_#111] hidden sm:inline-block">
@@ -135,11 +135,11 @@ export default function JudgingAssignmentsPage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
             </button>
           </span>
-          <button onClick={handleChangeHandle} className="font-black text-sm uppercase tracking-widest border-4 border-neo-black bg-white text-neo-black px-6 py-3 shadow-[4px_4px_0_#111] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+          <button onClick={handleChangeHandle} className="font-black text-xs sm:text-sm uppercase tracking-wide sm:tracking-widest border-4 border-neo-black bg-white text-neo-black px-3 sm:px-6 py-3 shadow-[4px_4px_0_#111] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
             CHANGE HANDLE
           </button>
           <SoundToggleButton className="hidden sm:flex" />
-          <button onClick={() => signOut(auth)} className="font-black text-sm uppercase tracking-widest border-4 border-neo-black bg-neo-black text-white px-6 py-3 shadow-[4px_4px_0_#FFD600] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+          <button onClick={() => signOut(auth)} className="font-black text-xs sm:text-sm uppercase tracking-wide sm:tracking-widest border-4 border-neo-black bg-neo-black text-white px-3 sm:px-6 py-3 shadow-[4px_4px_0_#FFD600] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
             SIGN OUT
           </button>
         </div>
@@ -152,7 +152,7 @@ export default function JudgingAssignmentsPage() {
             <span className="w-3 h-3 rounded-full border-4 border-white bg-neo-yellow"></span>
             EVALUATOR DASHBOARD
           </div>
-          <h1 className="font-hero text-[4rem] sm:text-[6rem] lg:text-[8rem] tracking-tight text-neo-black uppercase leading-[0.85] flex flex-col items-start mt-4">
+          <h1 className="font-hero text-[2.8rem] sm:text-[6rem] lg:text-[8rem] tracking-tight text-neo-black uppercase leading-[0.9] sm:leading-[0.85] flex flex-col items-start mt-4">
             <span className="block">JUDGING</span>
             <span className="inline-block bg-neo-yellow border-[4px] sm:border-[6px] border-neo-black px-4 sm:px-8 my-2 sm:my-4 shadow-[8px_8px_0_#111] lg:shadow-[12px_12px_0_#111] -rotate-1">
               ASSIGNMENTS
@@ -210,7 +210,7 @@ export default function JudgingAssignmentsPage() {
            )}
         </div>
         {toast && (
-          <div className={`fixed bottom-6 right-6 z-50 border-4 px-6 py-4 font-bold shadow-brutal ${toast.type==='error'?'bg-neo-red':'bg-neo-yellow text-neo-white'}`}>
+          <div className={`fixed bottom-4 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 z-50 border-4 px-4 sm:px-6 py-3 sm:py-4 font-bold shadow-brutal break-words ${toast.type==='error'?'bg-neo-red':'bg-neo-yellow text-neo-white'}`}>
             {toast.message}
           </div>
         )}

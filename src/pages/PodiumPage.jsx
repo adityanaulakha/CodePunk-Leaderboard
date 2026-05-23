@@ -76,10 +76,10 @@ export default function PodiumPage() {
     return (
       <div className="min-h-dvh bg-neo-white flex flex-col items-center justify-center text-center p-8 relative overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(17,17,17,0.05)_2px,transparent_2px),linear-gradient(90deg,rgba(17,17,17,0.05)_2px,transparent_2px)] bg-[size:32px_32px]"></div>
-        <div className="relative z-10 border-4 border-neo-black bg-neo-white p-12 shadow-[12px_12px_0_#111]">
-          <div className="font-hero text-6xl text-neo-black mb-4 uppercase bg-neo-red px-6 py-2 border-4 border-neo-black shadow-[6px_6px_0_#111] inline-block -rotate-2">ACCESS DENIED</div>
+        <div className="relative z-10 border-4 border-neo-black bg-neo-white p-6 sm:p-12 shadow-[12px_12px_0_#111]">
+          <div className="font-hero text-4xl sm:text-6xl text-neo-black mb-4 uppercase bg-neo-red px-4 sm:px-6 py-2 border-4 border-neo-black shadow-[6px_6px_0_#111] inline-block -rotate-2">ACCESS DENIED</div>
           <p className="text-neo-black font-black tracking-widest uppercase mb-8 mt-6">You must be authenticated as an Admin to enter Podium Mode.</p>
-          <Link to={`/${hackathonId}/admin`} className="px-8 py-4 border-4 border-neo-black bg-neo-yellow text-neo-black font-hero text-3xl uppercase hover:-translate-y-1 shadow-[6px_6px_0_#111] hover:shadow-[8px_8px_0_#111] transition-all inline-block">Go to Admin Portal to Login</Link>
+          <Link to={`/${hackathonId}/admin`} className="px-5 sm:px-8 py-4 border-4 border-neo-black bg-neo-yellow text-neo-black font-hero text-xl sm:text-3xl uppercase hover:-translate-y-1 shadow-[6px_6px_0_#111] hover:shadow-[8px_8px_0_#111] transition-all inline-block text-center">Go to Admin Portal to Login</Link>
         </div>
       </div>
     )
@@ -91,14 +91,14 @@ export default function PodiumPage() {
       <div className="min-h-dvh bg-neo-white flex flex-col items-center justify-center p-8 relative overflow-hidden text-center">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(17,17,17,0.05)_2px,transparent_2px),linear-gradient(90deg,rgba(17,17,17,0.05)_2px,transparent_2px)] bg-[size:32px_32px] pointer-events-none"></div>
         
-        <MotionDiv initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative z-10 w-full max-w-2xl border-4 border-neo-black bg-white p-10 lg:p-14 shadow-[12px_12px_0_#111]">
-          <h1 className="font-hero text-6xl uppercase tracking-widest text-neo-black drop-shadow-[4px_4px_0_#FFD600] mb-2">PODIUM MODE</h1>
+        <MotionDiv initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative z-10 w-full max-w-2xl border-4 border-neo-black bg-white p-6 sm:p-10 lg:p-14 shadow-[12px_12px_0_#111]">
+          <h1 className="font-hero text-4xl sm:text-6xl uppercase tracking-wide sm:tracking-widest text-neo-black drop-shadow-[4px_4px_0_#FFD600] mb-2">PODIUM MODE</h1>
           <p className="text-neo-red font-black uppercase tracking-widest mb-10 border-b-4 border-neo-black pb-4">Admin Ceremony Control Setup</p>
 
           <form onSubmit={handleStart} className="flex flex-col gap-8 text-left">
             <div className="flex flex-col gap-3">
-              <label className="font-hero text-3xl uppercase text-neo-black">Select Track</label>
-              <select value={ceremonyTrack} onChange={e => setCeremonyTrack(e.target.value)} className="border-4 border-neo-black bg-neo-white p-4 font-hero text-3xl uppercase text-neo-black outline-none focus:bg-neo-yellow transition-colors cursor-pointer shadow-[4px_4px_0_#111]">
+              <label className="font-hero text-xl sm:text-3xl uppercase text-neo-black">Select Track</label>
+              <select value={ceremonyTrack} onChange={e => setCeremonyTrack(e.target.value)} className="border-4 border-neo-black bg-neo-white p-4 font-hero text-xl sm:text-3xl uppercase text-neo-black outline-none focus:bg-neo-yellow transition-colors cursor-pointer shadow-[4px_4px_0_#111]">
                 {tracks?.map(t => (
                   <option key={t.id} value={t.id}>{t.name.toUpperCase()} TRACK</option>
                 ))}
@@ -106,11 +106,11 @@ export default function PodiumPage() {
             </div>
 
             <div className="flex flex-col gap-3">
-              <label className="font-hero text-3xl uppercase text-neo-black">Ranks To Reveal</label>
-              <input type="number" min="1" max="50" value={ranksToReveal} onChange={e => setRanksToReveal(Number(e.target.value))} className="border-4 border-neo-black bg-neo-white p-4 font-hero text-3xl uppercase text-neo-black outline-none focus:bg-neo-yellow transition-colors shadow-[4px_4px_0_#111]" />
+              <label className="font-hero text-xl sm:text-3xl uppercase text-neo-black">Ranks To Reveal</label>
+              <input type="number" min="1" max="50" value={ranksToReveal} onChange={e => setRanksToReveal(Number(e.target.value))} className="border-4 border-neo-black bg-neo-white p-4 font-hero text-xl sm:text-3xl uppercase text-neo-black outline-none focus:bg-neo-yellow transition-colors shadow-[4px_4px_0_#111]" />
             </div>
 
-            <button type="submit" className="mt-4 bg-neo-black border-4 border-neo-black w-full py-6 font-hero text-4xl uppercase tracking-widest text-neo-white shadow-[8px_8px_0_#FFD600] hover:-translate-y-2 hover:shadow-[12px_12px_0_#FFD600] transition-all">
+            <button type="submit" className="mt-4 bg-neo-black border-4 border-neo-black w-full py-5 sm:py-6 font-hero text-2xl sm:text-4xl uppercase tracking-wide sm:tracking-widest text-neo-white shadow-[8px_8px_0_#FFD600] hover:-translate-y-2 hover:shadow-[12px_12px_0_#FFD600] transition-all">
               Initialize Ceremony Sequence
             </button>
             <Link to={`/${hackathonId}/admin`} className="text-center font-black text-sm text-neo-black uppercase hover:text-neo-red transition-colors underline underline-offset-4 mt-2 tracking-widest">ESCAPE BACK TO ADMIN PORTAL</Link>
@@ -155,19 +155,19 @@ export default function PodiumPage() {
       )}
 
       {/* Exit Button */}
-      <div className="absolute top-8 left-8 z-50 opacity-50 hover:opacity-100 transition-opacity">
-        <button onClick={() => setCeremonyStarted(false)} className="bg-white border-4 border-neo-black text-neo-black px-4 py-2 font-hero text-xl uppercase tracking-widest shadow-[4px_4px_0_#111] hover:-translate-y-1 hover:shadow-[6px_6px_0_#111] transition-all">EXIT CEREMONY</button>
+      <div className="absolute top-4 sm:top-8 left-4 sm:left-8 z-50 opacity-50 hover:opacity-100 transition-opacity">
+        <button onClick={() => setCeremonyStarted(false)} className="bg-white border-4 border-neo-black text-neo-black px-3 sm:px-4 py-2 font-hero text-sm sm:text-xl uppercase tracking-wide sm:tracking-widest shadow-[4px_4px_0_#111] hover:-translate-y-1 hover:shadow-[6px_6px_0_#111] transition-all">EXIT CEREMONY</button>
       </div>
 
       {/* Header and Prompt */}
-      <div className="absolute top-12 left-0 right-0 z-40 flex flex-col items-center pointer-events-none">
-        <h2 className="font-hero text-5xl sm:text-7xl uppercase text-neo-black tracking-[0.2em] drop-shadow-[4px_4px_0_#FFD600]">
+      <div className="absolute top-12 left-0 right-0 z-40 flex flex-col items-center pointer-events-none px-4 text-center">
+        <h2 className="font-hero text-3xl sm:text-7xl uppercase text-neo-black tracking-[0.08em] sm:tracking-[0.2em] drop-shadow-[4px_4px_0_#FFD600] break-words">
           {tracks?.find(t => t.id === ceremonyTrack)?.name || ceremonyTrack} Track
         </h2>
         {revealedCount === 0 ? (
-          <p className="font-hero text-2xl uppercase text-neo-black mt-6 tracking-widest bg-neo-yellow border-4 border-neo-black px-6 py-2 animate-pulse shadow-[6px_6px_0_#111]">COMMENCE SEQUENCE [PRESS SPACEBAR]</p>
+          <p className="font-hero text-base sm:text-2xl uppercase text-neo-black mt-6 tracking-wide sm:tracking-widest bg-neo-yellow border-4 border-neo-black px-4 sm:px-6 py-2 animate-pulse shadow-[6px_6px_0_#111]">COMMENCE SEQUENCE [PRESS SPACEBAR]</p>
         ) : revealedCount < ranksToReveal ? (
-           <p className="font-hero text-xl uppercase text-neo-black mt-4 tracking-widest border-4 border-neo-black bg-white px-4 py-1 shadow-[4px_4px_0_#111]">[PRESS SPACEBAR TO REVEAL NEXT]</p>
+           <p className="font-hero text-sm sm:text-xl uppercase text-neo-black mt-4 tracking-wide sm:tracking-widest border-4 border-neo-black bg-white px-4 py-1 shadow-[4px_4px_0_#111]">[PRESS SPACEBAR TO REVEAL NEXT]</p>
         ) : null}
       </div>
 

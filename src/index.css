@@ -26,6 +26,7 @@
     box-sizing: border-box;
   }
 
+  /* Prevent common mobile overflow in flex/grid layouts where children refuse to shrink. */
   .flex > *,
   .grid > * {
     min-width: 0;
